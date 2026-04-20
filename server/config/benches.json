@@ -1,0 +1,54 @@
+{
+    "benches": [
+        {
+            "bench_id": 1,
+            "name": "Minerva Bench - 1",
+            "alias": "Vijayanagara",
+            "windows_hostname": "CGSCLXR85387250",
+            "windows_ip": "53.217.60.187",
+            "linux_hostname": "C623LRD90775115",
+            "linux_ip": "53.217.60.174",
+            "licenses": {}
+        },
+        {
+            "bench_id": 2,
+            "name": "Minerva Bench - 2",
+            "alias": "Maurya",
+            "windows_hostname": "CGSCLXR88863425",
+            "windows_ip": "53.217.60.151",
+            "linux_hostname": "C623LRD89895681",
+            "linux_ip": "",
+            "licenses": {}
+        },
+        {
+            "bench_id": 3,
+            "name": "Minerva Bench - 3",
+            "alias": "Chola",
+            "windows_hostname": "CGSCLXR90775160",
+            "windows_ip": "",
+            "linux_hostname": "C623LRD90042984",
+            "linux_ip": "",
+            "licenses": {}
+        },
+        {
+            "bench_id": 4,
+            "name": "Minerva Bench - 4",
+            "alias": "Magadha",
+            "windows_hostname": "CGSCLXR85739890",
+            "windows_ip": "",
+            "linux_hostname": "C623LRD83422370",
+            "linux_ip": "",
+            "licenses": {}
+        },
+        {
+            "bench_id": 5,
+            "name": "Minerva Bench - 5",
+            "alias": "Pallava",
+            "windows_hostname": "CGSCLXR90775219",
+            "windows_ip": "53.217.92.44",
+            "linux_hostname": "",
+            "linux_ip": "",
+            "licenses": {}
+        }
+    ]
+}

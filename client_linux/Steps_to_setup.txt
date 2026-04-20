@@ -1,0 +1,227 @@
+=============================================
+ MBRDI Bench Tracker - Linux Client Setup
+=============================================
+
+PREREQUISITES:
+  - Python 3.x installed
+  - sudo access on the bench PC
+  - python3-tk installed (sudo apt install python3-tk -y)
+  - python3-venv installed (sudo apt install python3-venv -y)
+  - requests library installed system-wide (python3 -c "import requests")
+  - Server running on 53.217.54.191:8000
+
+BENCH MAPPING:
+  Bench 1 - Vijayanagara  (bench_id = 1)
+  Bench 2 - Maurya         (bench_id = 2)
+  Bench 3 - Chola          (bench_id = 3)
+  Bench 4 - Magadha        (bench_id = 4)
+  Bench 5 - Pallava        (bench_id = 5)
+
+HOSTNAME MAPPING:
+  Bench 1 - Vijayanagara Linux: c623lrd90775115
+  Bench 5 - Pallava Windows: CGSCLXR90775219 (53.217.92.44)
+
+=============================================
+ STEP 1: Copy folder to bench PC
+=============================================
+
+  Copy the entire client_linux folder to the bench PC at:
+    ~/Documents/Bench_Usage_Automation
+
+  You can use WinSCP, SCP, USB, or NoMachine file transfer.
+
+  Files needed:
+    - login_gate.py
+    - session_monitor.py
+    - setup_client.sh
+    - uninstall_client.sh
+    - requirements.txt
+    - MBRDI.png
+
+=============================================
+ STEP 2: Install prerequisites (if not installed)
+=============================================
+
+    sudo apt install python3-tk python3-venv -y
+
+  Verify:
+    python3 -c "import tkinter; print('tkinter OK')"
+    python3 -c "import requests; print('requests OK')"
+
+  If requests is missing:
+    pip3 install requests
+    OR
+    sudo apt install python3-requests -y
+
+=============================================
+ STEP 3: Run setup script
+=============================================
+
+    cd ~/Documents/Bench_Usage_Automation
+    chmod +x setup_client.sh
+    sudo ./setup_client.sh
+
+  When prompted:
+    - Bench ID: Enter the number from BENCH MAPPING above
+    - Server IP: 53.217.54.191
+
+  NOTE: pip install inside setup will FAIL with "Network is
+  unreachable" or proxy errors. This is expected on corporate
+  network. The setup will show a WARNING about requests not
+  installed. Ignore it and continue to Step 4.
+
+=============================================
+ STEP 4: Fix the venv (CRITICAL)
+=============================================
+
+  The pip install fails because corporate proxy blocks it.
+  The fix is to recreate the venv with --system-site-packages
+  so it uses the system-installed requests library:
+
+    sudo rm -rf /opt/bench-automation/venv
+    sudo python3 -m venv --system-site-packages /opt/bench-automation/venv
+
+  Verify it works:
+    /opt/bench-automation/venv/bin/python -c "import requests; print('OK')"
+    sudo /opt/bench-automation/venv/bin/python -c "import requests; print('OK')"
+
+  BOTH must print "OK". The login gate runs as your user,
+  but the session monitor runs as root via systemd.
+  If either fails, requests is not installed system-wide
+  (go back to Step 2).
+
+=============================================
+ STEP 5: Copy logo file
+=============================================
+
+    sudo cp ~/Documents/Bench_Usage_Automation/MBRDI.png /opt/bench-automation/
+
+=============================================
+ STEP 6: Fix permissions
+=============================================
+
+    sudo chmod 777 /opt/bench-automation/
+    sudo touch /opt/bench-automation/login_gate.log /opt/bench-automation/session_monitor.log
+    sudo chmod 666 /opt/bench-automation/login_gate.log /opt/bench-automation/session_monitor.log
+
+=============================================
+ STEP 7: Start session monitor service
+=============================================
+
+    sudo systemctl daemon-reload
+    sudo systemctl enable bench-session-monitor.service
+    sudo systemctl start bench-session-monitor.service
+
+  Check status:
+    sudo systemctl status bench-session-monitor
+
+  It should show "active (running)".
+
+=============================================
+ STEP 8: Test login gate manually
+=============================================
+
+    /opt/bench-automation/venv/bin/python /opt/bench-automation/login_gate.py
+
+  A centered dark login window should appear.
+  Enter Short ID and Purpose, then click CHECK IN & START.
+  It should say "Check-in successful" (NOT "Server offline").
+  Verify the dashboard (http://53.217.54.191:8000) shows
+  the bench Linux PC as occupied.
+
+  If it says "Server offline - logged locally":
+    - Check server is running: curl http://53.217.54.191:8000/api/benches
+    - Check requests works: see Step 4
+
+=============================================
+ STEP 9: Test auto-release (checkout)
+=============================================
+
+  1. Disconnect the NoMachine session (close the window)
+  2. Wait 15-20 seconds
+  3. Check dashboard (http://53.217.54.191:8000)
+  4. The bench Linux PC should show as "Available"
+
+  If it doesn't work, check the log:
+    tail -20 /opt/bench-automation/session_monitor.log
+
+  Common issues:
+    - "requests library not available" -> Step 4 not done correctly
+    - No log entries at all -> service not running (Step 7)
+
+=============================================
+ STEP 10: Test auto-login gate (checkin)
+=============================================
+
+  1. Reconnect via NoMachine
+  2. The login gate should appear automatically within 15 seconds
+  3. Fill in Short ID and Purpose, submit
+  4. Dashboard should show bench as occupied again
+
+  If login gate doesn't appear:
+    tail -20 /opt/bench-automation/session_monitor.log
+    Look for "Launching login gate" entries.
+
+=============================================
+ TROUBLESHOOTING
+=============================================
+
+  PROBLEM: Login gate hangs / system freezes
+  FIX: SSH in and kill it:
+    ssh piddb58@<bench_ip>
+    sudo pkill -9 -f login_gate.py
+    sudo rm -f /opt/bench-automation/.login_gate.lock
+  If SSH fails, use WinSCP terminal (Ctrl+T):
+    echo "PASSWORD" | sudo -S pkill -9 -f login_gate.py
+
+  PROBLEM: Login gate says "Server offline"
+  FIX: Check requests is available:
+    /opt/bench-automation/venv/bin/python -c "import requests; print('OK')"
+  Check server is reachable:
+    curl http://53.217.54.191:8000/api/benches
+
+  PROBLEM: Lock file prevents login gate from launching
+  FIX: Delete stale lock file:
+    sudo rm -f /opt/bench-automation/.login_gate.lock
+
+  PROBLEM: Service keeps restarting but nothing works
+  FIX: Stop everything and start fresh:
+    sudo systemctl stop bench-session-monitor
+    sudo pkill -9 -f login_gate.py
+    sudo pkill -9 -f session_monitor.py
+    sudo rm -f /opt/bench-automation/.login_gate.lock
+    Then fix the issue and restart service.
+
+  PROBLEM: NoMachine disconnect not detected
+  FIX: Verify detection method works:
+    ss -tn | grep 4000
+  Should show ESTAB when NoMachine connected, empty when disconnected.
+
+=============================================
+ COMPLETE UNINSTALL
+=============================================
+
+    sudo systemctl stop bench-session-monitor
+    sudo systemctl disable bench-session-monitor
+    sudo rm -f /etc/systemd/system/bench-session-monitor.service
+    sudo systemctl daemon-reload
+    sudo rm -f /etc/xdg/autostart/bench-login-gate.desktop
+    sudo pkill -9 -f login_gate.py
+    sudo pkill -9 -f session_monitor.py
+    sudo rm -rf /opt/bench-automation
+
+  Or run: sudo ./uninstall_client.sh
+
+=============================================
+ NOTES
+=============================================
+
+  - All files installed to: /opt/bench-automation/
+  - Session monitor runs as systemd service (auto-starts on boot)
+  - Login gate auto-starts on desktop login via /etc/xdg/autostart/
+  - Session monitor also launches login gate on NoMachine reconnect
+  - Detection method: ss -tn | grep 4000 (NoMachine TCP port)
+  - Logs:
+      /opt/bench-automation/session_monitor.log
+      /opt/bench-automation/login_gate.log
+  - Corporate proxy: 127.0.0.1:3128 (blocks pip, use --system-site-packages)

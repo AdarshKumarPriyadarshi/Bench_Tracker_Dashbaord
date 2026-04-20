@@ -1,0 +1,71 @@
+MBRDI Minerva Bench Tracker - Server Setup Steps
+==================================================
+
+Server PC: Linux (53.217.54.191)
+Folder:    ~/Desktop/Bench_Usage_Automation/server/
+
+--------------------------------------------------
+SETUP (One-time)
+--------------------------------------------------
+
+1. Copy the 'server' folder contents to the Linux PC
+
+2. Make scripts executable:
+   chmod +x *.sh
+
+3. Run setup:
+   ./setup_server.sh
+
+   NOTE: If pip fails due to corporate proxy/mirror, install manually:
+
+   source venv/bin/activate
+   pip install --index-url https://pypi.org/simple/ --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+
+4. Verify:
+   source venv/bin/activate
+   python3 -c "import fastapi, uvicorn, jinja2; print('All packages OK')"
+
+--------------------------------------------------
+START SERVER
+--------------------------------------------------
+
+   ./run_server.sh
+
+   Dashboard:  http://53.217.54.191:8000
+   History:    http://53.217.54.191:8000/history
+
+--------------------------------------------------
+RUN IN BACKGROUND (so it survives terminal close)
+--------------------------------------------------
+
+   source venv/bin/activate
+   cd app
+   nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 > server.log 2>&1 &
+
+   To check if running:
+   ps aux | grep uvicorn
+
+   To stop:
+   pkill -f "uvicorn main:app"
+
+--------------------------------------------------
+UNINSTALL
+--------------------------------------------------
+
+   ./uninstall_server.sh
+
+--------------------------------------------------
+TROUBLESHOOTING
+--------------------------------------------------
+
+- Port already in use:
+  lsof -i :8000
+  kill -9 <PID>
+
+- Corporate proxy blocking pip:
+  Use --index-url https://pypi.org/simple/ --trusted-host pypi.org --trusted-host files.pythonhosted.org
+
+- Check firewall (if dashboard not reachable from other PCs):
+  sudo ufw allow 8000/tcp
+
+==================================================

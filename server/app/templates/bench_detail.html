@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bench Details | MBRDI</title>
+    <link rel="icon" href="/static/MBRDI.png" type="image/png">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/bench_detail.css">
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <img src="/static/MBRDI.png" alt="MBRDI" class="header-logo">
+            <div class="header-titles">
+                <h1>Minerva Bench Tracker</h1>
+                <span class="header-subtitle">Mercedes-Benz Research &amp; Development India</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <a href="/" class="btn btn-secondary">Dashboard</a>
+            <a href="/history" class="btn btn-secondary">History</a>
+        </div>
+    </div>
+
+    <div class="detail-container">
+        <div class="detail-header" id="detail-header">
+            <div class="detail-title-row">
+                <div>
+                    <h2 class="detail-bench-name" id="bench-name">Loading...</h2>
+                    <span class="detail-bench-alias" id="bench-alias"></span>
+                </div>
+                <a href="/" class="btn btn-secondary btn-back">Back to Dashboard</a>
+            </div>
+        </div>
+
+        <div class="detail-grid">
+            <div class="detail-section">
+                <h3 class="section-title">Windows PC</h3>
+                <div class="info-card" id="win-info">
+                    <div class="info-row">
+                        <span class="info-label">Hostname</span>
+                        <span class="info-value" id="win-hostname">--</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">IP Address</span>
+                        <span class="info-value" id="win-ip">--</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status</span>
+                        <span class="info-value" id="win-status">--</span>
+                    </div>
+                    <div class="info-row" id="win-user-row" style="display:none">
+                        <span class="info-label">Current User</span>
+                        <span class="info-value" id="win-user">--</span>
+                    </div>
+                    <div class="info-row" id="win-purpose-row" style="display:none">
+                        <span class="info-label">Purpose</span>
+                        <span class="info-value" id="win-purpose">--</span>
+                    </div>
+                    <div class="info-row" id="win-access-row" style="display:none">
+                        <span class="info-label">Access Method</span>
+                        <span class="info-value" id="win-access">--</span>
+                    </div>
+                    <div class="info-row" id="win-duration-row" style="display:none">
+                        <span class="info-label">Duration</span>
+                        <span class="info-value" id="win-duration">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h3 class="section-title">Linux PC</h3>
+                <div class="info-card" id="lin-info">
+                    <div class="info-row">
+                        <span class="info-label">Hostname</span>
+                        <span class="info-value" id="lin-hostname">--</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">IP Address</span>
+                        <span class="info-value" id="lin-ip">--</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status</span>
+                        <span class="info-value" id="lin-status">--</span>
+                    </div>
+                    <div class="info-row" id="lin-user-row" style="display:none">
+                        <span class="info-label">Current User</span>
+                        <span class="info-value" id="lin-user">--</span>
+                    </div>
+                    <div class="info-row" id="lin-purpose-row" style="display:none">
+                        <span class="info-label">Purpose</span>
+                        <span class="info-value" id="lin-purpose">--</span>
+                    </div>
+                    <div class="info-row" id="lin-access-row" style="display:none">
+                        <span class="info-label">Access Method</span>
+                        <span class="info-value" id="lin-access">--</span>
+                    </div>
+                    <div class="info-row" id="lin-duration-row" style="display:none">
+                        <span class="info-label">Duration</span>
+                        <span class="info-value" id="lin-duration">--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-section" id="license-section" style="display:none">
+            <h3 class="section-title">Licenses</h3>
+            <div class="info-card" id="license-info"></div>
+        </div>
+
+        <div class="detail-section">
+            <div class="history-header">
+                <h3 class="section-title">Usage History</h3>
+                <div class="range-buttons">
+                    <button class="btn btn-range active" data-range="today">Today</button>
+                    <button class="btn btn-range" data-range="yesterday">Yesterday</button>
+                    <button class="btn btn-range" data-range="7days">7 Days</button>
+                    <button class="btn btn-range" data-range="30days">30 Days</button>
+                    <button class="btn btn-range" data-range="all">All</button>
+                </div>
+            </div>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>PC Type</th>
+                        <th>Short ID</th>
+                        <th>Purpose</th>
+                        <th>Access</th>
+                        <th>Start Time</th>
+                        <th>End Time</th>
+                        <th>Duration</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                    <tr><td colspan="7" class="no-data">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="footer">
+        <div class="footer-content">
+            <div class="footer-line"></div>
+            <p class="footer-text">Mercedes-Benz Research &amp; Development India</p>
+            <p class="footer-text">Minerva Bench Usage Automation &mdash; Internal Use Only</p>
+        </div>
+    </div>
+
+    <script>
+        const BENCH_ID = {{ bench_id }};
+        let currentRange = "today";
+
+        function formatDuration(isoString) {
+            if (!isoString) return "--";
+            const start = new Date(isoString);
+            const now = new Date();
+            const mins = Math.floor((now - start) / 60000);
+            const hrs = Math.floor(mins / 60);
+            const rem = mins % 60;
+            if (hrs > 0) return `${hrs}h ${String(rem).padStart(2, '0')}m`;
+            return `${mins}m`;
+        }
+
+        function formatDateTime(iso) {
+            if (!iso) return "--";
+            const d = new Date(iso);
+            return d.toLocaleString("en-IN", {
+                day: "2-digit", month: "short", year: "numeric",
+                hour: "2-digit", minute: "2-digit", hour12: true,
+            });
+        }
+
+        function escapeHtml(text) {
+            if (!text) return "";
+            const div = document.createElement("div");
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function getDateRange(range) {
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            let from, to;
+
+            switch (range) {
+                case "today":
+                    from = today.toISOString();
+                    to = new Date(today.getTime() + 86400000).toISOString();
+                    break;
+                case "yesterday":
+                    from = new Date(today.getTime() - 86400000).toISOString();
+                    to = today.toISOString();
+                    break;
+                case "7days":
+                    from = new Date(today.getTime() - 7 * 86400000).toISOString();
+                    to = new Date(today.getTime() + 86400000).toISOString();
+                    break;
+                case "30days":
+                    from = new Date(today.getTime() - 30 * 86400000).toISOString();
+                    to = new Date(today.getTime() + 86400000).toISOString();
+                    break;
+                case "all":
+                    return {};
+            }
+            return { date_from: from, date_to: to };
+        }
+
+        function renderPcInfo(prefix, pc, hostname, ip) {
+            const el = id => document.getElementById(id);
+            el(`${prefix}-hostname`).textContent = hostname || "--";
+            el(`${prefix}-ip`).textContent = ip || "--";
+
+            if (pc && pc.status === "occupied") {
+                el(`${prefix}-status`).innerHTML = '<span class="status-badge status-occupied"><span class="status-dot"></span> Occupied</span>';
+                el(`${prefix}-user-row`).style.display = "";
+                el(`${prefix}-user`).innerHTML = `<strong>${escapeHtml(pc.short_id)}</strong>${pc.user_name ? ` - ${escapeHtml(pc.user_name)}` : ""}`;
+                el(`${prefix}-purpose-row`).style.display = "";
+                el(`${prefix}-purpose`).textContent = pc.purpose || "--";
+                el(`${prefix}-access-row`).style.display = "";
+                el(`${prefix}-access`).textContent = (pc.access_method || "--").toUpperCase();
+                el(`${prefix}-duration-row`).style.display = "";
+                el(`${prefix}-duration`).textContent = formatDuration(pc.start_time);
+            } else {
+                el(`${prefix}-status`).innerHTML = '<span class="status-badge status-available"><span class="status-dot"></span> Available</span>';
+                el(`${prefix}-user-row`).style.display = "none";
+                el(`${prefix}-purpose-row`).style.display = "none";
+                el(`${prefix}-access-row`).style.display = "none";
+                el(`${prefix}-duration-row`).style.display = "none";
+            }
+        }
+
+        async function fetchBenchDetail() {
+            try {
+                const res = await fetch(`/api/bench/${BENCH_ID}`);
+                const data = await res.json();
+
+                document.getElementById("bench-name").textContent = data.name;
+                document.getElementById("bench-alias").textContent = data.alias;
+                document.title = `${data.alias || data.name} | MBRDI`;
+
+                renderPcInfo("win", data.pcs.windows, data.windows_hostname, data.windows_ip);
+                renderPcInfo("lin", data.pcs.linux, data.linux_hostname, data.linux_ip);
+
+                const licenses = data.licenses || {};
+                const licenseKeys = Object.keys(licenses);
+                if (licenseKeys.length > 0) {
+                    document.getElementById("license-section").style.display = "";
+                    document.getElementById("license-info").innerHTML = licenseKeys.map(k =>
+                        `<div class="info-row"><span class="info-label">${escapeHtml(k)}</span><span class="info-value">${escapeHtml(licenses[k])}</span></div>`
+                    ).join("");
+                }
+            } catch (err) {
+                console.error("Failed to fetch bench detail:", err);
+            }
+        }
+
+        async function fetchHistory() {
+            const range = getDateRange(currentRange);
+            let url = `/api/history?bench_id=${BENCH_ID}&limit=500`;
+            if (range.date_from) url += `&date_from=${encodeURIComponent(range.date_from)}`;
+            if (range.date_to) url += `&date_to=${encodeURIComponent(range.date_to)}`;
+
+            try {
+                const res = await fetch(url);
+                const records = await res.json();
+                const tbody = document.getElementById("history-body");
+
+                if (records.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="no-data">No usage history for this period</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = records.map(r => `
+                    <tr>
+                        <td style="text-transform:capitalize">${r.pc_type}</td>
+                        <td><strong style="color:var(--accent-blue);letter-spacing:0.04em">${escapeHtml(r.short_id)}</strong></td>
+                        <td>${escapeHtml(r.purpose)}</td>
+                        <td><span class="access-badge">${(r.access_method || "--").toUpperCase()}</span></td>
+                        <td>${formatDateTime(r.start_time)}</td>
+                        <td>${formatDateTime(r.end_time)}</td>
+                        <td style="font-variant-numeric:tabular-nums">${r.duration_min ? r.duration_min.toFixed(1) + " min" : "--"}</td>
+                    </tr>
+                `).join("");
+            } catch (err) {
+                console.error("Failed to fetch history:", err);
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchBenchDetail();
+            fetchHistory();
+            setInterval(fetchBenchDetail, 10000);
+
+            document.querySelectorAll(".btn-range").forEach(btn => {
+                btn.addEventListener("click", () => {
+                    document.querySelectorAll(".btn-range").forEach(b => b.classList.remove("active"));
+                    btn.classList.add("active");
+                    currentRange = btn.dataset.range;
+                    fetchHistory();
+                });
+            });
+        });
+    </script>
+</body>
+</html>

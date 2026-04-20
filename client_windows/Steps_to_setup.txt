@@ -1,0 +1,94 @@
+=============================================
+ MBRDI Bench Tracker - Windows Client Setup
+=============================================
+
+PREREQUISITES:
+  - Python 3.x installed and added to PATH
+  - Admin access on the bench PC
+  - Server running on 53.217.54.191:8000
+
+BENCH MAPPING:
+  Bench 1 - Vijayanagara  (bench_id = 1)
+  Bench 2 - Maurya         (bench_id = 2)
+  Bench 3 - Chola          (bench_id = 3)
+  Bench 4 - Magadha        (bench_id = 4)
+  Bench 5 - Pallava        (bench_id = 5)
+
+=============================================
+ STEP 1: Copy folder to bench PC
+=============================================
+
+  Copy the entire "client_windows" folder to the bench PC at:
+    C:\Bench_Usage_Automation
+
+  Files included:
+    - setup_client.bat
+    - uninstall_client.bat
+    - session_monitor.py
+    - login_gate.py
+    - config.ini
+    - requirements.txt
+    - Steps_to_setup.txt (this file)
+
+=============================================
+ STEP 2: Run setup
+=============================================
+
+  Open Command Prompt as Administrator, then:
+
+    cd C:\Bench_Usage_Automation
+    setup_client.bat
+
+  When prompted:
+    - Bench ID: Enter the number from BENCH MAPPING above
+    - Server IP: 53.217.54.191
+
+  If pip install fails due to corporate proxy, run manually:
+
+    venv\Scripts\python.exe -m pip install --index-url https://pypi.org/simple/ --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+
+=============================================
+ STEP 3: Start session monitor
+=============================================
+
+    cd C:\Bench_Usage_Automation
+    start "" venv\Scripts\pythonw.exe session_monitor.py
+
+=============================================
+ STEP 4: Test login gate
+=============================================
+
+    venv\Scripts\python.exe login_gate.py
+
+  A fullscreen login window should appear.
+  Enter your Short ID and Purpose, then click CHECK IN & START.
+  Verify the dashboard shows the bench as occupied.
+
+=============================================
+ STEP 5: Test auto-release
+=============================================
+
+  Disconnect the RDP session.
+  Wait 15-20 seconds.
+  Check the dashboard from the server machine (http://53.217.54.191:8000).
+  The bench should show as "Available".
+
+=============================================
+ STEP 6: Test auto-login gate
+=============================================
+
+  Reconnect via RDP.
+  The login gate should appear automatically.
+  Fill in details and check in.
+  Dashboard should show the bench as occupied again.
+
+=============================================
+ NOTES
+=============================================
+
+  - Session monitor starts automatically on PC startup (scheduled task).
+  - Login gate starts automatically on every logon (scheduled task).
+  - Logs are saved in C:\Bench_Usage_Automation:
+      session_monitor.log
+      login_gate.log
+  - To uninstall: run uninstall_client.bat as Administrator.

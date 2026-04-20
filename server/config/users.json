@@ -1,0 +1,16 @@
+{
+    "users": {
+        "ADPRIYA": {
+            "name": "Adarsh Priyadarshi",
+            "email": "adarsh.priyadarshi@mercedes-benz.com"
+        },
+        "BHARAB": {
+            "name": "Tata A B",
+            "email": "tata.a.b@mercedes-benz.com"
+        },
+        "GURAHUL": {
+            "name": "Rahul Gupta",
+            "email": "kpit.gupta@mercedes-benz.com"
+        }
+    }
+}

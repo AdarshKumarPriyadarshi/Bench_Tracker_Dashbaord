@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minerva Bench Tracker | MBRDI</title>
+    <link rel="icon" href="/static/MBRDI.png" type="image/png">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <img src="/static/MBRDI.png" alt="MBRDI" class="header-logo">
+            <div class="header-titles">
+                <h1>Minerva Bench Tracker</h1>
+                <span class="header-subtitle">Mercedes-Benz Research &amp; Development India</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="live-indicator">
+                <span class="live-dot"></span>
+                Live
+            </span>
+            <a href="/history" class="btn btn-secondary">History</a>
+        </div>
+    </div>
+
+    <div class="stats-bar">
+        <div class="stat-item">
+            <span class="stat-value green" id="stat-available">&mdash;</span>
+            <span class="stat-label">Available</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value red" id="stat-occupied">&mdash;</span>
+            <span class="stat-label">Occupied</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value blue" id="stat-users">&mdash;</span>
+            <span class="stat-label">Active Users</span>
+        </div>
+        <div class="stat-item">
+            <span class="stat-value silver" id="stat-total">10</span>
+            <span class="stat-label">Total PCs</span>
+        </div>
+    </div>
+
+    <div class="bench-grid" id="bench-grid"></div>
+
+    <div class="footer">
+        <div class="footer-content">
+            <div class="footer-line"></div>
+            <p class="footer-text">Mercedes-Benz Research &amp; Development India</p>
+            <p class="footer-text">Minerva Bench Usage Automation &mdash; Internal Use Only</p>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
