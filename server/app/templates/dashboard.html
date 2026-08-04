@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minerva Bench Tracker | MBRDI</title>
+    <title>System Function Bench Tracker | MBRDI</title>
     <link rel="icon" href="/static/MBRDI.png" type="image/png">
     <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
 <body>
     <div class="header">
-        <div class="header-left">
+        <div class="header-left" onclick="window.location='/'" style="cursor:pointer;">
             <img src="/static/MBRDI.png" alt="MBRDI" class="header-logo">
             <div class="header-titles">
-                <h1>Minerva Bench Tracker</h1>
+                <h1>System Function Bench Tracker</h1>
                 <span class="header-subtitle">Mercedes-Benz Research &amp; Development India</span>
             </div>
         </div>
@@ -20,8 +20,11 @@
             <span class="live-indicator">
                 <span class="live-dot"></span>
                 Live
+                <span id="last-updated" style="margin-left:0.6rem;font-size:0.55rem;color:var(--text-muted);letter-spacing:0.04em;"></span>
             </span>
             <a href="/history" class="btn btn-secondary">History</a>
+            <a href="/statistics" class="btn btn-secondary">Statistics</a>
+            <a href="/defect-board" class="btn btn-secondary">Defect Board</a>
         </div>
     </div>
 
@@ -39,19 +42,15 @@
             <span class="stat-label">Active Users</span>
         </div>
         <div class="stat-item">
-            <span class="stat-value silver" id="stat-total">10</span>
-            <span class="stat-label">Total PCs</span>
+            <span class="stat-value silver" id="stat-total">5</span>
+            <span class="stat-label">Total Benches</span>
         </div>
     </div>
 
     <div class="bench-grid" id="bench-grid"></div>
 
-    <div class="footer">
-        <div class="footer-content">
-            <div class="footer-line"></div>
-            <p class="footer-text">Mercedes-Benz Research &amp; Development India</p>
-            <p class="footer-text">Minerva Bench Usage Automation &mdash; Internal Use Only</p>
-        </div>
+    <div class="footer" style="display:flex;justify-content:center;align-items:center;padding:1.2rem 2.5rem;border-top:1px solid var(--border-color);margin-top:1rem;background:#1a1a1a;">
+        <p class="footer-text" style="color:var(--mercedes-silver);">&copy; 2026 Mercedes-Benz Research &amp; Development India. All Rights Reserved.</p>
     </div>
 
     <div id="toast-container"></div>

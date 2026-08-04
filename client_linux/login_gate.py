@@ -12,6 +12,7 @@ import sys
 import json
 import logging
 import subprocess
+import threading
 from datetime import datetime
 
 try:
@@ -58,12 +59,15 @@ def detect_access_method():
     return "physical"
 
 
+NO_PROXY = {"http": None, "https": None}
+
+
 def send_checkin(server_url, timeout, payload):
     if requests is None:
         logging.warning("requests library not available, saving locally")
         return False
     try:
-        resp = requests.post(f"{server_url}/api/checkin", json=payload, timeout=timeout)
+        resp = requests.post(f"{server_url}/api/checkin", json=payload, timeout=timeout, proxies=NO_PROXY)
         if resp.status_code == 200:
             logging.info(f"Check-in successful: {payload['short_id']} on Bench {payload['bench_id']}")
             return True
@@ -113,7 +117,7 @@ class LoginGateApp:
         self.build_ui()
 
     def setup_window(self):
-        self.root.title("Minerva Bench Tracker | MBRDI")
+        self.root.title("System Function Bench Tracker | MBRDI")
         self.root.configure(bg=self.BG)
         self.root.protocol("WM_DELETE_WINDOW", self.block_close)
         self.root.bind("<Alt-F4>", lambda e: "break")
@@ -157,7 +161,7 @@ class LoginGateApp:
 
         title_frame = tk.Frame(header, bg=self.BG)
         title_frame.pack(side="left")
-        tk.Label(title_frame, text="MINERVA BENCH TRACKER", font=("Ubuntu", 14), fg=self.SILVER, bg=self.BG, anchor="w").pack(anchor="w")
+        tk.Label(title_frame, text="SYSTEM FUNCTION BENCH TRACKER", font=("Ubuntu", 14), fg=self.SILVER, bg=self.BG, anchor="w").pack(anchor="w")
         tk.Label(title_frame, text="Mercedes-Benz Research & Development India", font=("Ubuntu", 7), fg=self.TEXT_MUTED, bg=self.BG, anchor="w").pack(anchor="w")
 
         sep = tk.Frame(outer, bg=self.BORDER, height=1, width=400)
@@ -225,20 +229,27 @@ class LoginGateApp:
         self.purpose_combo.bind("<Return>", lambda e: self.submit())
 
     def submit(self):
+        if getattr(self, "_submitting", False):
+            return
+        self._submitting = True
+
         short_id = self.short_id_var.get().strip()
         purpose = self.purpose_var.get().strip()
 
         if not short_id:
             self.error_var.set("Please enter your Short ID")
             self.short_id_entry.focus_set()
+            self._submitting = False
             return
         if not purpose:
             self.error_var.set("Please select or enter a purpose")
             self.purpose_combo.focus_set()
+            self._submitting = False
             return
 
         self.error_var.set("")
         self.submit_btn.config(state="disabled", text="Checking in...")
+        self.root.update_idletasks()
 
         payload = {
             "bench_id": self.config["bench_id"],
@@ -248,12 +259,18 @@ class LoginGateApp:
             "access_method": self.access_method,
         }
 
-        success = send_checkin(self.config["server_url"], self.config["timeout"], payload)
-        if not success:
-            save_local(payload)
-            self.error_var.set("Server offline - logged locally. You may proceed.")
+        self.root.after(50, lambda: self._do_checkin(payload))
 
-        self.root.after(500, self.close_gate)
+    def _do_checkin(self, payload):
+        def _worker():
+            success = send_checkin(self.config["server_url"], self.config["timeout"], payload)
+            if not success:
+                save_local(payload)
+                self.root.after(0, lambda: self.error_var.set("Server offline - logged locally. You may proceed."))
+            self.root.after(300, self.close_gate)
+
+        t = threading.Thread(target=_worker, daemon=True)
+        t.start()
 
     def close_gate(self):
         logging.info("Login gate closing - user checked in")

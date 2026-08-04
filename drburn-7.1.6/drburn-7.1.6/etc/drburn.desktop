@@ -1,0 +1,10 @@
+[Desktop Entry]
+Comment=Start to run Dr. Burn
+Exec=bash -c "/home/pid1beb/sit/drburn/app/drburn; read -p 'Please press Enter to close this window: '"
+Path=/home/pid1beb/sit/drburn/app/
+Icon=/home/pid1beb/sit/drburn/app/etc/icon.png
+Name=Dr.Burn
+StartupNotify=true
+Terminal=true
+Type=Application
+X-KDE-SubstituteUID=false

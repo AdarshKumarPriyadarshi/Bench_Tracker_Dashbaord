@@ -1,17 +1,15 @@
-# Virtual environment
-venv/
-
-# Python cache
 __pycache__/
 *.pyc
-*.pyo
-
-# Database (auto-generated)
+venv/
+.env
 *.db
-
-# Logs
 *.log
-local_checkins.json
+*.lock
+.claude/
+
+# Sensitive files
+server/config/credentials.json
+server/config/jira_config.json
 
 # IDE
 .vscode/
@@ -21,5 +19,5 @@ local_checkins.json
 Thumbs.db
 .DS_Store
 
-# Claude
-.claude/
+# Node modules (jira frontend)
+node_modules/

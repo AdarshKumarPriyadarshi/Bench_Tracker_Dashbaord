@@ -8,7 +8,7 @@ PREREQUISITES:
   - python3-tk installed (sudo apt install python3-tk -y)
   - python3-venv installed (sudo apt install python3-venv -y)
   - requests library installed system-wide (python3 -c "import requests")
-  - Server running on 53.217.54.191:8000
+  - Server running on c623drd41380439:8000
 
 BENCH MAPPING:
   Bench 1 - Vijayanagara  (bench_id = 1)
@@ -63,7 +63,7 @@ HOSTNAME MAPPING:
 
   When prompted:
     - Bench ID: Enter the number from BENCH MAPPING above
-    - Server IP: 53.217.54.191
+    - Server IP: c623drd41380439
 
   NOTE: pip install inside setup will FAIL with "Network is
   unreachable" or proxy errors. This is expected on corporate
@@ -126,11 +126,11 @@ HOSTNAME MAPPING:
   A centered dark login window should appear.
   Enter Short ID and Purpose, then click CHECK IN & START.
   It should say "Check-in successful" (NOT "Server offline").
-  Verify the dashboard (http://53.217.54.191:8000) shows
+  Verify the dashboard (http://c623drd41380439:8000) shows
   the bench Linux PC as occupied.
 
   If it says "Server offline - logged locally":
-    - Check server is running: curl http://53.217.54.191:8000/api/benches
+    - Check server is running: curl http://c623drd41380439:8000/api/benches
     - Check requests works: see Step 4
 
 =============================================
@@ -139,7 +139,7 @@ HOSTNAME MAPPING:
 
   1. Disconnect the NoMachine session (close the window)
   2. Wait 15-20 seconds
-  3. Check dashboard (http://53.217.54.191:8000)
+  3. Check dashboard (http://c623drd41380439:8000)
   4. The bench Linux PC should show as "Available"
 
   If it doesn't work, check the log:
@@ -178,7 +178,7 @@ HOSTNAME MAPPING:
   FIX: Check requests is available:
     /opt/bench-automation/venv/bin/python -c "import requests; print('OK')"
   Check server is reachable:
-    curl http://53.217.54.191:8000/api/benches
+    curl http://c623drd41380439:8000/api/benches
 
   PROBLEM: Lock file prevents login gate from launching
   FIX: Delete stale lock file:

@@ -1,0 +1,510 @@
+/* Defect Board — Jira Integration Styles */
+
+.defect-page-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1.5rem 2rem;
+}
+
+/* --- Filters --- */
+.defect-filters {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.filter-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.defect-filters select {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.defect-filters select:focus {
+    border-color: var(--accent-blue);
+}
+
+.filter-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-self: flex-end;
+    margin-left: auto;
+}
+
+.filter-actions .btn {
+    transition: all 0.2s;
+}
+
+.filter-actions .btn:hover {
+    background: var(--accent-blue);
+    color: #000;
+    border-color: var(--accent-blue);
+}
+
+.btn-refresh {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+/* --- Stats Cards --- */
+.defect-stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.defect-stat-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.defect-stat-card:hover {
+    transform: translateY(-2px);
+    border-color: #3a3a3a;
+}
+
+.defect-stat-value {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.defect-stat-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.3rem;
+}
+
+.stat-ongoing {
+    border-left: 4px solid #3b82f6;
+}
+.stat-ongoing .defect-stat-value { color: #3b82f6; }
+
+.stat-closed {
+    border-left: 4px solid #22c55e;
+}
+.stat-closed .defect-stat-value { color: #22c55e; }
+
+/* --- Charts Row --- */
+.defect-charts-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.defect-chart-panel {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.2rem;
+}
+
+.defect-chart-header h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 0.2rem 0;
+}
+
+.defect-chart-header .chart-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.defect-chart-body {
+    height: 260px;
+    position: relative;
+    margin-top: 0.8rem;
+}
+
+/* --- Aging Cards --- */
+.aging-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+}
+
+.aging-card {
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+.aging-value {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.aging-label {
+    display: block;
+    font-size: 0.7rem;
+    margin-top: 0.3rem;
+    opacity: 0.8;
+}
+
+.aging-green {
+    background: rgba(34, 197, 94, 0.1);
+    border-color: rgba(34, 197, 94, 0.3);
+}
+.aging-green .aging-value { color: #22c55e; }
+
+.aging-yellow {
+    background: rgba(234, 179, 8, 0.1);
+    border-color: rgba(234, 179, 8, 0.3);
+}
+.aging-yellow .aging-value { color: #eab308; }
+
+.aging-orange {
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.3);
+}
+.aging-orange .aging-value { color: #f97316; }
+
+.aging-red {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: rgba(220, 38, 38, 0.3);
+}
+.aging-red .aging-value { color: #dc2626; }
+
+/* --- Category Tabs --- */
+.category-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.cat-tab {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cat-tab:hover {
+    border-color: #3b82f6;
+    color: var(--text-primary);
+}
+
+.cat-tab.active {
+    background: rgba(59, 130, 246, 0.15);
+    border-color: #3b82f6;
+    color: #3b82f6;
+    font-weight: 600;
+}
+
+/* --- Tables --- */
+.defect-table-panel {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+}
+
+.defect-table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.defect-table-header h3 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.table-subtitle {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.defect-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+}
+
+.defect-table th {
+    text-align: left;
+    padding: 0.7rem 0.8rem;
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-color);
+    white-space: nowrap;
+}
+
+.defect-table td {
+    padding: 0.65rem 0.8rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    vertical-align: middle;
+}
+
+.defect-table tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.sysfunc-row {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.sysfunc-row.selected {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.sysfunc-row.selected td {
+    color: var(--text-primary);
+}
+
+.acronym-cell {
+    font-weight: 600;
+    color: var(--text-primary) !important;
+    letter-spacing: 0.03em;
+}
+
+.tester-cell {
+    color: var(--text-muted) !important;
+    font-size: 0.75rem;
+}
+
+/* Count badges */
+.count-badge {
+    display: inline-block;
+    min-width: 28px;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.badge-ongoing {
+    background: rgba(59, 130, 246, 0.15);
+    color: #3b82f6;
+}
+
+.badge-closed {
+    background: rgba(34, 197, 94, 0.15);
+    color: #22c55e;
+}
+
+.badge-total {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+/* --- Defect List Table --- */
+.defect-list-table .key-cell a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
+.defect-list-table .key-cell a:hover {
+    text-decoration: underline;
+}
+
+.status-pill {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.priority-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+}
+
+.summary-cell {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary) !important;
+}
+
+.person-cell {
+    font-size: 0.75rem;
+    white-space: nowrap;
+}
+
+.comment-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.72rem;
+    color: var(--text-muted) !important;
+}
+
+/* --- Pagination --- */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.page-info {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.btn-sm {
+    padding: 0.4rem 0.8rem !important;
+    font-size: 0.7rem !important;
+}
+
+/* --- Error & Loading --- */
+.defect-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    gap: 1rem;
+}
+
+.error-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.15);
+    color: #dc2626;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.error-text {
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.defect-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    gap: 1rem;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.loading-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--border-color);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.no-data {
+    text-align: center;
+    color: var(--text-muted) !important;
+    padding: 2rem !important;
+    font-size: 0.8rem;
+}
+
+/* --- Responsive --- */
+@media (max-width: 900px) {
+    .defect-charts-row {
+        grid-template-columns: 1fr;
+    }
+    .defect-stats-row {
+        grid-template-columns: 1fr;
+    }
+    .aging-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    .defect-page-container {
+        padding: 1rem;
+    }
+    .defect-filters {
+        flex-direction: column;
+    }
+    .aging-row {
+        grid-template-columns: 1fr;
+    }
+}

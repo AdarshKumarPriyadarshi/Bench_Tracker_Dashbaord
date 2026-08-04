@@ -5,7 +5,7 @@
 PREREQUISITES:
   - Python 3.x installed and added to PATH
   - Admin access on the bench PC
-  - Server running on 53.217.54.191:8000
+  - Server running on c623drd41380439:8000
 
 BENCH MAPPING:
   Bench 1 - Vijayanagara  (bench_id = 1)
@@ -41,7 +41,7 @@ BENCH MAPPING:
 
   When prompted:
     - Bench ID: Enter the number from BENCH MAPPING above
-    - Server IP: 53.217.54.191
+    - Server IP: c623drd41380439
 
   If pip install fails due to corporate proxy, run manually:
 
@@ -70,7 +70,7 @@ BENCH MAPPING:
 
   Disconnect the RDP session.
   Wait 15-20 seconds.
-  Check the dashboard from the server machine (http://53.217.54.191:8000).
+  Check the dashboard from the server machine (http://c623drd41380439:8000).
   The bench should show as "Available".
 
 =============================================

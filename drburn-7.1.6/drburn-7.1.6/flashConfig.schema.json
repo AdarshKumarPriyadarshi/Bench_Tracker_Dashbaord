@@ -1,0 +1,242 @@
+{
+    "title": "FlashConfig",
+    "type": "object",
+    "properties": {
+        "config": {
+            "title": "Config",
+            "description": "JSON config file",
+            "type": "string",
+            "format": "path"
+        },
+        "debug": {
+            "title": "Debug",
+            "description": "debug mode without modifying flashed software",
+            "type": "boolean"
+        },
+        "download": {
+            "title": "Download",
+            "description": "download only",
+            "type": "boolean"
+        },
+        "interactive": {
+            "title": "Interactive",
+            "description": "mode that guides the user step by step",
+            "type": "boolean"
+        },
+        "verbose": {
+            "title": "Verbose",
+            "description": "increase output verbosity",
+            "type": "boolean"
+        },
+        "output": {
+            "title": "Output",
+            "default": {
+                "logdir": null,
+                "localstorage": null,
+                "workspace": null
+            },
+            "allOf": [
+                {
+                    "$ref": "#/definitions/Output"
+                }
+            ]
+        },
+        "artifactory": {
+            "title": "Artifactory",
+            "default": {
+                "uri": null,
+                "user": null,
+                "password": null
+            },
+            "allOf": [
+                {
+                    "$ref": "#/definitions/Artifactory"
+                }
+            ]
+        },
+        "idc": {
+            "title": "Idc",
+            "default": {
+                "ip": null,
+                "port": 22
+            },
+            "allOf": [
+                {
+                    "$ref": "#/definitions/Idc"
+                }
+            ]
+        },
+        "modules": {
+            "title": "Modules",
+            "default": {
+                "adaptive": {
+                    "id": "adaptive",
+                    "update": false,
+                    "sources": {
+                        "source": {
+                            "error": false,
+                            "url": null
+                        }
+                    }
+                },
+                "ddu": {
+                    "id": "ddu",
+                    "update": false,
+                    "sources": {
+                        "source": {
+                            "error": false,
+                            "url": null
+                        }
+                    }
+                },
+                "ndas": {
+                    "id": "ndas",
+                    "update": false,
+                    "sources": {
+                        "source": {
+                            "error": false,
+                            "url": null
+                        }
+                    }
+                },
+                "rrdata": {
+                    "id": "rrdata",
+                    "update": false,
+                    "sources": {
+                        "source": {
+                            "error": false,
+                            "url": null
+                        }
+                    }
+                },
+                "bundle": {
+                    "id": "bundle",
+                    "update": false,
+                    "sources": {
+                        "source": {
+                            "error": false,
+                            "url": null
+                        }
+                    }
+                }
+            },
+            "type": "object",
+            "additionalProperties": {
+                "$ref": "#/definitions/Module"
+            }
+        }
+    },
+    "definitions": {
+        "Output": {
+            "title": "Output",
+            "type": "object",
+            "properties": {
+                "logdir": {
+                    "title": "Logdir",
+                    "type": "string",
+                    "format": "path"
+                },
+                "localstorage": {
+                    "title": "Localstorage",
+                    "type": "string",
+                    "format": "path"
+                },
+                "workspace": {
+                    "title": "Workspace",
+                    "type": "string",
+                    "format": "path"
+                }
+            }
+        },
+        "Artifactory": {
+            "title": "Artifactory",
+            "type": "object",
+            "properties": {
+                "uri": {
+                    "title": "Uri",
+                    "type": "string"
+                },
+                "user": {
+                    "title": "User",
+                    "type": "string"
+                },
+                "password": {
+                    "title": "Password",
+                    "type": "string"
+                }
+            }
+        },
+        "Idc": {
+            "title": "Idc",
+            "type": "object",
+            "properties": {
+                "ip": {
+                    "title": "Ip",
+                    "type": "string"
+                },
+                "port": {
+                    "title": "Port",
+                    "default": 22,
+                    "type": "integer"
+                }
+            }
+        },
+        "Source": {
+            "title": "Source",
+            "type": "object",
+            "properties": {
+                "error": {
+                    "title": "Error",
+                    "default": false,
+                    "type": "boolean"
+                },
+                "url": {
+                    "title": "Url",
+                    "description": "Local path or url of tar file",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "string",
+                            "format": "path"
+                        }
+                    ]
+                }
+            }
+        },
+        "Module": {
+            "title": "Module",
+            "type": "object",
+            "properties": {
+                "id": {
+                    "title": "Id",
+                    "description": "The lowercase flashing module name, e.g. adaptive",
+                    "type": "string"
+                },
+                "update": {
+                    "title": "Update",
+                    "description": "Whether to update idc via flashing",
+                    "default": false,
+                    "type": "boolean"
+                },
+                "sources": {
+                    "title": "Sources",
+                    "default": {
+                        "source": {
+                            "error": false,
+                            "url": null
+                        }
+                    },
+                    "type": "object",
+                    "additionalProperties": {
+                        "$ref": "#/definitions/Source"
+                    }
+                }
+            },
+            "required": [
+                "id"
+            ]
+        }
+    }
+}

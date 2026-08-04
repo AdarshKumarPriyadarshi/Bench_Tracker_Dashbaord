@@ -1,0 +1,77 @@
+{
+    "config": null,
+    "debug": false,
+    "download": false,
+    "interactive": false,
+    "verbose": false,
+    "output": {
+        "logdir": "/lhome/pflorek/.config/drburn",
+        "localstorage": "/lhome/pflorek/Downloads/drburn",
+        "workspace": "/tmp/drburn/example-session-id"
+    },
+    "artifactory": {
+        "uri": null,
+        "user": null,
+        "password": null
+    },
+    "idc": {
+        "ip": "192.168.5.10",
+        "port": 22
+    },
+    "modules": {
+        "adaptive": {
+            "id": "adaptive",
+            "update": false,
+            "sources": {
+                "source": {
+                    "error": false,
+                    "url": null
+                }
+            }
+        },
+        "ndas": {
+            "id": "ndas",
+            "update": false,
+            "sources": {
+                "source": {
+                    "error": false,
+                    "url": null
+                }
+            }
+        },
+        "rrdata": {
+            "id": "rrdata",
+            "update": false,
+            "sources": {
+                "source": {
+                    "error": false,
+                    "url": null
+                }
+            }
+        },
+        "ddu": {
+            "id": "ddu",
+            "update": false,
+            "sources": {
+                "source": {
+                    "error": false,
+                    "url": null
+                },
+                "script": {
+                    "error": false,
+                    "url": "/lhome/pflorek/projects/drburn/src/flashing/ddu/flash_ddu.sh"
+                }
+            }
+        },
+        "bundle": {
+            "id": "bundle",
+            "update": false,
+            "sources": {
+                "source": {
+                    "error": false,
+                    "url": null
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics | System Function Bench Tracker</title>
+    <link rel="icon" href="/static/MBRDI.png" type="image/png">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/statistics.css">
+    <script src="/static/js/chart.umd.min.js"></script>
+    <script src="/static/js/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left" onclick="window.location='/'" style="cursor:pointer;">
+            <img src="/static/MBRDI.png" alt="MBRDI" class="header-logo">
+            <div class="header-titles">
+                <h1>System Function Bench Tracker</h1>
+                <span class="header-subtitle">Mercedes-Benz Research &amp; Development India</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <a href="/" class="btn btn-secondary">Dashboard</a>
+            <a href="/history" class="btn btn-secondary">History</a>
+            <a href="/statistics" class="btn btn-active">Statistics</a>
+            <a href="/defect-board" class="btn btn-secondary">Defect Board</a>
+        </div>
+    </div>
+
+    <div class="stats-page-container">
+        <div class="filters">
+            <select id="filter-bench">
+                <option value="">All Benches</option>
+                <option value="1">Vijayanagara</option>
+                <option value="2">Maurya</option>
+                <option value="3">Chola</option>
+                <option value="4">Magadha</option>
+                <option value="5">Pallava</option>
+            </select>
+            <select id="filter-user">
+                <option value="">All Users</option>
+            </select>
+            <select id="filter-period">
+                <option value="7" selected>Last 7 Days</option>
+                <option value="14">Last 14 Days</option>
+                <option value="30">Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+            </select>
+            <input type="date" id="filter-from" placeholder="From">
+            <input type="date" id="filter-to" placeholder="To">
+            <script>
+                const today = new Date().toISOString().slice(0, 10);
+                const fromInput = document.getElementById("filter-from");
+                const toInput = document.getElementById("filter-to");
+                fromInput.max = today;
+                toInput.max = today;
+                fromInput.addEventListener("change", () => { toInput.min = fromInput.value; });
+                toInput.addEventListener("change", () => { fromInput.max = toInput.value || today; });
+
+                const observer = new MutationObserver(() => {
+                    if (fromInput.value) toInput.min = fromInput.value;
+                    if (toInput.value) fromInput.max = toInput.value;
+                });
+                observer.observe(fromInput, { attributes: true, attributeFilter: ['value'] });
+                observer.observe(toInput, { attributes: true, attributeFilter: ['value'] });
+
+                setInterval(() => {
+                    if (fromInput.value) toInput.min = fromInput.value;
+                    if (toInput.value) fromInput.max = toInput.value;
+                }, 500);
+            </script>
+            <button class="btn btn-secondary" onclick="fetchStatistics()">Apply</button>
+        </div>
+
+        <div class="summary-cards">
+            <div class="summary-card">
+                <span class="summary-value" id="sum-sessions">&mdash;</span>
+                <span class="summary-label">Total Sessions</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-value" id="sum-avg-duration">&mdash;</span>
+                <span class="summary-label">Avg Duration</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-value" id="sum-total-hours">&mdash;</span>
+                <span class="summary-label">Total Hours</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-value" id="sum-most-used">&mdash;</span>
+                <span class="summary-label">Most Used Bench</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-value" id="sum-top-user">&mdash;</span>
+                <span class="summary-label">Top User</span>
+            </div>
+            <div class="summary-card">
+                <span class="summary-value" id="sum-busiest-day">&mdash;</span>
+                <span class="summary-label">Busiest Day</span>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-panel">
+                <div class="chart-header">
+                    <h3>Peak Hours</h3>
+                    <span class="chart-subtitle">Sessions started by hour of day</span>
+                </div>
+                <div class="chart-body">
+                    <canvas id="timeline-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel">
+                <div class="chart-header">
+                    <h3>Daily Sessions</h3>
+                    <span class="chart-subtitle">Number of sessions per day</span>
+                </div>
+                <div class="chart-body">
+                    <canvas id="daily-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel">
+                <div class="chart-header">
+                    <h3>Usage by Bench</h3>
+                    <span class="chart-subtitle">Total hours per bench</span>
+                </div>
+                <div class="chart-body chart-body-small">
+                    <canvas id="bench-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-panel">
+                <div class="chart-header">
+                    <h3>Usage by User</h3>
+                    <span class="chart-subtitle">Total hours per user</span>
+                </div>
+                <div class="chart-body chart-body-small">
+                    <canvas id="user-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-panel calendar-panel">
+            <div class="chart-header">
+                <h3>Calendar Heatmap</h3>
+                <span class="chart-subtitle">Usage intensity by day</span>
+            </div>
+            <div class="calendar-container" id="calendar-container"></div>
+        </div>
+    </div>
+
+    <div class="footer" style="display:flex;justify-content:center;align-items:center;padding:1.2rem 2.5rem;border-top:1px solid var(--border-color);margin-top:1rem;background:#1a1a1a;">
+        <p class="footer-text" style="color:var(--mercedes-silver);">&copy; 2026 Mercedes-Benz Research &amp; Development India. All Rights Reserved.</p>
+    </div>
+
+    <div id="chart-lightbox" class="chart-lightbox" onclick="closeLightbox(event)">
+        <div class="chart-lightbox-content" id="chart-lightbox-content"></div>
+    </div>
+
+    <script src="/static/js/statistics.js"></script>
+</body>
+</html>

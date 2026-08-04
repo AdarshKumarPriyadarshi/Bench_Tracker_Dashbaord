@@ -11,7 +11,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 read -p "  Enter Bench ID (1-5): " BENCH_ID
-read -p "  Enter Server IP (e.g., 53.217.54.191): " SERVER_IP
+read -p "  Enter Server IP (e.g., c623drd41380439): " SERVER_IP
 
 INSTALL_DIR="/opt/bench-automation"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

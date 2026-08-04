@@ -3,21 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Usage History | Minerva Bench Tracker</title>
+    <title>Usage History | System Function Bench Tracker</title>
     <link rel="icon" href="/static/MBRDI.png" type="image/png">
     <link rel="stylesheet" href="/static/css/dashboard.css">
 </head>
 <body>
     <div class="header">
-        <div class="header-left">
+        <div class="header-left" onclick="window.location='/'" style="cursor:pointer;">
             <img src="/static/MBRDI.png" alt="MBRDI" class="header-logo">
             <div class="header-titles">
-                <h1>Usage History</h1>
+                <h1>System Function Bench Tracker</h1>
                 <span class="header-subtitle">Mercedes-Benz Research &amp; Development India</span>
             </div>
         </div>
         <div class="header-right">
             <a href="/" class="btn btn-secondary">Dashboard</a>
+            <a href="/history" class="btn btn-active">History</a>
+            <a href="/statistics" class="btn btn-secondary">Statistics</a>
+            <a href="/defect-board" class="btn btn-secondary">Defect Board</a>
         </div>
     </div>
 
@@ -25,40 +28,41 @@
         <div class="filters">
             <select id="filter-bench" onchange="fetchHistory()">
                 <option value="">All Benches</option>
-                <option value="1">Minerva Bench 1 &mdash; Vijayanagara</option>
-                <option value="2">Minerva Bench 2 &mdash; Maurya</option>
-                <option value="3">Minerva Bench 3 &mdash; Chola</option>
-                <option value="4">Minerva Bench 4 &mdash; Magadha</option>
-                <option value="5">Minerva Bench 5 &mdash; Pallava</option>
+                <option value="1">Vijayanagara</option>
+                <option value="2">Maurya</option>
+                <option value="3">Chola</option>
+                <option value="4">Magadha</option>
+                <option value="5">Pallava</option>
             </select>
             <input type="text" id="filter-user" placeholder="Search by Short ID..." onkeyup="fetchHistory()">
+            <select id="filter-limit" onchange="fetchHistory()">
+                <option value="50" selected>50 Records</option>
+                <option value="100">100 Records</option>
+                <option value="200">200 Records</option>
+                <option value="500">500 Records</option>
+            </select>
+            <button class="btn btn-secondary" onclick="exportCSV()">Export CSV</button>
         </div>
 
         <table class="history-table">
             <thead>
                 <tr>
                     <th>Bench</th>
-                    <th>PC Type</th>
                     <th>User</th>
                     <th>Purpose</th>
-                    <th>Access</th>
                     <th>Start Time</th>
                     <th>End Time</th>
                     <th>Duration</th>
                 </tr>
             </thead>
             <tbody id="history-body">
-                <tr><td colspan="8" class="no-data">Loading...</td></tr>
+                <tr><td colspan="6" class="no-data">Loading...</td></tr>
             </tbody>
         </table>
     </div>
 
-    <div class="footer">
-        <div class="footer-content">
-            <div class="footer-line"></div>
-            <p class="footer-text">Mercedes-Benz Research &amp; Development India</p>
-            <p class="footer-text">Minerva Bench Usage Automation &mdash; Internal Use Only</p>
-        </div>
+    <div class="footer" style="display:flex;justify-content:center;align-items:center;padding:1.2rem 2.5rem;border-top:1px solid var(--border-color);margin-top:1rem;background:#1a1a1a;">
+        <p class="footer-text" style="color:var(--mercedes-silver);">&copy; 2026 Mercedes-Benz Research &amp; Development India. All Rights Reserved.</p>
     </div>
 
     <script src="/static/js/dashboard.js"></script>

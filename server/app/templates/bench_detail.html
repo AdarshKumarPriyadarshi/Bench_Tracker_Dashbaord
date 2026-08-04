@@ -7,19 +7,22 @@
     <link rel="icon" href="/static/MBRDI.png" type="image/png">
     <link rel="stylesheet" href="/static/css/dashboard.css">
     <link rel="stylesheet" href="/static/css/bench_detail.css">
+    <script src="/static/js/chart.umd.min.js"></script>
 </head>
 <body>
     <div class="header">
-        <div class="header-left">
+        <div class="header-left" onclick="window.location='/'" style="cursor:pointer;">
             <img src="/static/MBRDI.png" alt="MBRDI" class="header-logo">
             <div class="header-titles">
-                <h1>Minerva Bench Tracker</h1>
+                <h1>System Function Bench Tracker</h1>
                 <span class="header-subtitle">Mercedes-Benz Research &amp; Development India</span>
             </div>
         </div>
         <div class="header-right">
             <a href="/" class="btn btn-secondary">Dashboard</a>
             <a href="/history" class="btn btn-secondary">History</a>
+            <a href="/statistics" class="btn btn-secondary">Statistics</a>
+            <a href="/defect-board" class="btn btn-secondary">Defect Board</a>
         </div>
     </div>
 
@@ -27,8 +30,11 @@
         <div class="detail-header" id="detail-header">
             <div class="detail-title-row">
                 <div>
-                    <h2 class="detail-bench-name" id="bench-name">Loading...</h2>
-                    <span class="detail-bench-alias" id="bench-alias"></span>
+                    <div style="display:flex;align-items:center;gap:1rem;">
+                        <h2 class="detail-bench-name" id="bench-name">Loading...</h2>
+                        <span id="bench-architecture" class="bench-ecu"><span class="ecu-dot"></span> </span>
+                    </div>
+                    <span id="bench-sw-version" class="bench-sw-version"></span>
                 </div>
                 <a href="/" class="btn btn-secondary btn-back">Back to Dashboard</a>
             </div>
@@ -111,7 +117,10 @@
 
         <div class="detail-section">
             <div class="history-header">
-                <h3 class="section-title">Usage History</h3>
+                <div class="tab-buttons">
+                    <button class="btn btn-tab active" onclick="switchTab('history')">Usage History</button>
+                    <button class="btn btn-tab" onclick="switchTab('statistics')">Statistics</button>
+                </div>
                 <div class="range-buttons">
                     <button class="btn btn-range active" data-range="today">Today</button>
                     <button class="btn btn-range" data-range="yesterday">Yesterday</button>
@@ -120,31 +129,45 @@
                     <button class="btn btn-range" data-range="all">All</button>
                 </div>
             </div>
-            <table class="history-table">
-                <thead>
-                    <tr>
-                        <th>PC Type</th>
-                        <th>Short ID</th>
-                        <th>Purpose</th>
-                        <th>Access</th>
-                        <th>Start Time</th>
-                        <th>End Time</th>
-                        <th>Duration</th>
-                    </tr>
-                </thead>
-                <tbody id="history-body">
-                    <tr><td colspan="7" class="no-data">Loading...</td></tr>
-                </tbody>
-            </table>
+
+            <div id="tab-history">
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Short ID</th>
+                            <th>Purpose</th>
+                            <th>Start Time</th>
+                            <th>End Time</th>
+                            <th>Duration</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-body">
+                        <tr><td colspan="5" class="no-data">Loading...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div id="tab-statistics" style="display:none;">
+                <div class="bench-charts-grid">
+                    <div class="bench-chart-panel">
+                        <h4 class="bench-chart-title">Peak Hours</h4>
+                        <div class="bench-chart-body"><canvas id="bench-peak-chart"></canvas></div>
+                    </div>
+                    <div class="bench-chart-panel">
+                        <h4 class="bench-chart-title">Daily Sessions</h4>
+                        <div class="bench-chart-body"><canvas id="bench-daily-chart"></canvas></div>
+                    </div>
+                    <div class="bench-chart-panel">
+                        <h4 class="bench-chart-title">Usage by User</h4>
+                        <div class="bench-chart-body"><canvas id="bench-user-chart"></canvas></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="footer">
-        <div class="footer-content">
-            <div class="footer-line"></div>
-            <p class="footer-text">Mercedes-Benz Research &amp; Development India</p>
-            <p class="footer-text">Minerva Bench Usage Automation &mdash; Internal Use Only</p>
-        </div>
+    <div class="footer" style="display:flex;justify-content:center;align-items:center;padding:1.2rem 2.5rem;border-top:1px solid var(--border-color);margin-top:1rem;background:#1a1a1a;">
+        <p class="footer-text" style="color:var(--mercedes-silver);">&copy; 2026 Mercedes-Benz Research &amp; Development India. All Rights Reserved.</p>
     </div>
 
     <script>
@@ -236,8 +259,10 @@
                 const data = await res.json();
 
                 document.getElementById("bench-name").textContent = data.name;
-                document.getElementById("bench-alias").textContent = data.alias;
-                document.title = `${data.alias || data.name} | MBRDI`;
+                const archEl = document.getElementById("bench-architecture");
+                archEl.innerHTML = `<span class="ecu-dot"></span> ${data.architecture || ""}`;
+                document.getElementById("bench-sw-version").textContent = data.sw_version ? "SW : " + data.sw_version : "";
+                document.title = `${data.name} | MBRDI`;
 
                 renderPcInfo("win", data.pcs.windows, data.windows_hostname, data.windows_ip);
                 renderPcInfo("lin", data.pcs.linux, data.linux_hostname, data.linux_ip);
@@ -267,16 +292,15 @@
                 const tbody = document.getElementById("history-body");
 
                 if (records.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" class="no-data">No usage history for this period</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="5" class="no-data">No usage history for this period</td></tr>';
                     return;
                 }
 
+                benchHistoryData = records;
                 tbody.innerHTML = records.map(r => `
                     <tr>
-                        <td style="text-transform:capitalize">${r.pc_type}</td>
-                        <td><strong style="color:var(--accent-blue);letter-spacing:0.04em">${escapeHtml(r.short_id)}</strong></td>
+                        <td style="color:var(--text-primary);letter-spacing:0.04em">${escapeHtml(r.short_id)}</td>
                         <td>${escapeHtml(r.purpose)}</td>
-                        <td><span class="access-badge">${(r.access_method || "--").toUpperCase()}</span></td>
                         <td>${formatDateTime(r.start_time)}</td>
                         <td>${formatDateTime(r.end_time)}</td>
                         <td style="font-variant-numeric:tabular-nums">${r.duration_min ? r.duration_min.toFixed(1) + " min" : "--"}</td>
@@ -285,6 +309,82 @@
             } catch (err) {
                 console.error("Failed to fetch history:", err);
             }
+        }
+
+        let benchHistoryData = [];
+        let benchPeakChart = null;
+        let benchDailyChart = null;
+        let benchUserChart = null;
+
+        function switchTab(tab) {
+            document.querySelectorAll(".btn-tab").forEach(b => b.classList.remove("active"));
+            if (tab === "history") {
+                document.getElementById("tab-history").style.display = "";
+                document.getElementById("tab-statistics").style.display = "none";
+                document.querySelectorAll(".btn-tab")[0].classList.add("active");
+            } else {
+                document.getElementById("tab-history").style.display = "none";
+                document.getElementById("tab-statistics").style.display = "";
+                document.querySelectorAll(".btn-tab")[1].classList.add("active");
+                renderBenchCharts();
+            }
+        }
+
+        function renderBenchCharts() {
+            if (benchHistoryData.length === 0) return;
+
+            const hourCounts = {};
+            benchHistoryData.forEach(r => {
+                if (!r.start_time) return;
+                const hour = new Date(r.start_time).getHours();
+                hourCounts[hour] = (hourCounts[hour] || 0) + 1;
+            });
+            const peakLabels = [];
+            const peakData = [];
+            for (let h = 6; h <= 20; h++) {
+                peakLabels.push(`${String(h).padStart(2, '0')}:00`);
+                peakData.push(hourCounts[h] || 0);
+            }
+
+            if (benchPeakChart) benchPeakChart.destroy();
+            benchPeakChart = new Chart(document.getElementById("bench-peak-chart").getContext("2d"), {
+                type: "bar",
+                data: { labels: peakLabels, datasets: [{ label: "Sessions", data: peakData, backgroundColor: "rgba(64, 196, 255, 0.5)", borderColor: "rgba(64, 196, 255, 0.9)", borderWidth: 1, borderRadius: 3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: "rgba(255,255,255,0.04)" } }, y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: "rgba(255,255,255,0.04)" } } } }
+            });
+
+            const dayCounts = {};
+            benchHistoryData.forEach(r => {
+                if (!r.start_time) return;
+                const day = r.start_time.slice(0, 10);
+                dayCounts[day] = (dayCounts[day] || 0) + 1;
+            });
+            const sortedDays = Object.keys(dayCounts).sort();
+            const dailyLabels = sortedDays.map(d => new Date(d).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }));
+            const dailyData = sortedDays.map(d => dayCounts[d]);
+
+            if (benchDailyChart) benchDailyChart.destroy();
+            benchDailyChart = new Chart(document.getElementById("bench-daily-chart").getContext("2d"), {
+                type: "bar",
+                data: { labels: dailyLabels, datasets: [{ label: "Sessions", data: dailyData, backgroundColor: "rgba(64, 196, 255, 0.4)", borderColor: "rgba(64, 196, 255, 0.8)", borderWidth: 1, borderRadius: 3 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: "rgba(255,255,255,0.04)" } }, y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: "rgba(255,255,255,0.04)" } } } }
+            });
+
+            const userHours = {};
+            benchHistoryData.forEach(r => {
+                const uid = r.short_id;
+                userHours[uid] = (userHours[uid] || 0) + (r.duration_min || 0) / 60;
+            });
+            const sorted = Object.entries(userHours).sort((a, b) => b[1] - a[1]).slice(0, 8);
+            const userLabels = sorted.map(([k]) => k);
+            const userData = sorted.map(([, v]) => Math.round(v * 10) / 10);
+
+            if (benchUserChart) benchUserChart.destroy();
+            benchUserChart = new Chart(document.getElementById("bench-user-chart").getContext("2d"), {
+                type: "bar",
+                data: { labels: userLabels, datasets: [{ label: "Hours", data: userData, backgroundColor: "rgba(64, 196, 255, 0.4)", borderColor: "rgba(64, 196, 255, 0.8)", borderWidth: 1, borderRadius: 3 }] },
+                options: { responsive: true, maintainAspectRatio: false, indexAxis: "y", plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: "rgba(255,255,255,0.04)" } }, y: { grid: { color: "rgba(255,255,255,0.04)" } } } }
+            });
         }
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -297,7 +397,11 @@
                     document.querySelectorAll(".btn-range").forEach(b => b.classList.remove("active"));
                     btn.classList.add("active");
                     currentRange = btn.dataset.range;
-                    fetchHistory();
+                    fetchHistory().then(() => {
+                        if (document.getElementById("tab-statistics").style.display !== "none") {
+                            renderBenchCharts();
+                        }
+                    });
                 });
             });
         });

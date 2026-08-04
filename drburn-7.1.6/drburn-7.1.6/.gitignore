@@ -1,0 +1,8 @@
+*.rtf
+.vscode
+.idea
+__pycache__
+.pytest_cache
+build/
+dist/
+drburn.spec

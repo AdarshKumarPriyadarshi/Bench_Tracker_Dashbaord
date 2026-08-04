@@ -23,8 +23,11 @@ fi
 
 echo " [2/3] Installing dependencies..."
 source venv/bin/activate
-pip install --upgrade pip --quiet
-pip install -r requirements.txt --quiet
+unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY ALL_PROXY all_proxy SOCKS_PROXY socks_proxy
+pip config set global.proxy "" --quiet 2>/dev/null
+pip install pysocks --quiet --index-url https://pypi.org/simple/ --trusted-host pypi.org --trusted-host files.pythonhosted.org
+pip install --upgrade pip --quiet --index-url https://pypi.org/simple/ --trusted-host pypi.org --trusted-host files.pythonhosted.org
+pip install -r requirements.txt --quiet --index-url https://pypi.org/simple/ --trusted-host pypi.org --trusted-host files.pythonhosted.org
 
 echo " [3/3] Verifying..."
 python3 -c "import fastapi, uvicorn, jinja2; print('       All packages OK')"

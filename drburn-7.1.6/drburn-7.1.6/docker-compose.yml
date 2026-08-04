@@ -1,0 +1,9 @@
+version: "3.3"
+
+services:
+  drburn:
+    container_name: drburn
+    build: .
+    volumes:
+        - ./:/repo
+    tty: true

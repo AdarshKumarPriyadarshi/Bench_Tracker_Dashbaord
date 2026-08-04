@@ -48,6 +48,9 @@ def load_config():
     }
 
 
+NO_PROXY = {"http": None, "https": None}
+
+
 def send_checkout(config):
     global _last_checkout_time
     now = time.time()
@@ -69,6 +72,7 @@ def send_checkout(config):
             f"{config['server_url']}/api/checkout",
             json=payload,
             timeout=config["timeout"],
+            proxies=NO_PROXY,
         )
         if resp.status_code in (200, 404):
             logging.info(f"Checkout successful for Bench {config['bench_id']}")

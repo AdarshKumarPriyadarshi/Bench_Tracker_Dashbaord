@@ -12,6 +12,7 @@ import sys
 import ctypes
 import json
 import logging
+import threading
 from datetime import datetime
 
 try:
@@ -30,6 +31,8 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s",
 )
+
+NO_PROXY = {"http": None, "https": None}
 
 
 def load_config():
@@ -62,6 +65,7 @@ def send_checkin(server_url, timeout, payload):
             f"{server_url}/api/checkin",
             json=payload,
             timeout=timeout,
+            proxies=NO_PROXY,
         )
         if resp.status_code == 200:
             logging.info(f"Check-in successful: {payload['short_id']} on Bench {payload['bench_id']}")
@@ -69,7 +73,7 @@ def send_checkin(server_url, timeout, payload):
         else:
             logging.error(f"Check-in failed ({resp.status_code}): {resp.text}")
             return False
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logging.error(f"Server unreachable: {e}")
         return False
 
@@ -110,7 +114,7 @@ class LoginGateApp:
         self.build_ui()
 
     def setup_window(self):
-        self.root.title("Minerva Bench Tracker | MBRDI")
+        self.root.title("System Function Bench Tracker | MBRDI")
         self.root.attributes("-fullscreen", True)
         self.root.attributes("-topmost", True)
         self.root.configure(bg=self.BG)
@@ -130,28 +134,37 @@ class LoginGateApp:
         outer.place(relx=0.5, rely=0.5, anchor="center")
 
         self._logo_img = None
+        self._logo_frames = []
         if os.path.exists(LOGO_PATH):
             try:
                 from PIL import Image, ImageTk
-                img = Image.open(LOGO_PATH).resize((36, 36), Image.LANCZOS)
-                self._logo_img = ImageTk.PhotoImage(img)
+                img = Image.open(LOGO_PATH).resize((56, 56), Image.LANCZOS)
+                for angle in range(0, 360, 10):
+                    rotated = img.rotate(-angle, resample=Image.BICUBIC, expand=False)
+                    self._logo_frames.append(ImageTk.PhotoImage(rotated))
+                self._logo_img = self._logo_frames[0]
             except ImportError:
                 try:
-                    self._logo_img = tk.PhotoImage(file=LOGO_PATH).subsample(5, 5)
+                    self._logo_img = tk.PhotoImage(file=LOGO_PATH).subsample(8, 8)
                 except Exception:
                     pass
 
         header = tk.Frame(outer, bg=self.BG)
         header.pack(pady=(0, 8))
 
+        self._logo_label = None
         if self._logo_img:
-            tk.Label(header, image=self._logo_img, bg=self.BG).pack(side="left", padx=(0, 12))
+            self._logo_label = tk.Label(header, image=self._logo_img, bg=self.BG)
+            self._logo_label.pack(side="left", padx=(0, 8))
+            if self._logo_frames:
+                self._logo_frame_idx = 0
+                self._rotate_logo()
 
         title_frame = tk.Frame(header, bg=self.BG)
         title_frame.pack(side="left")
         tk.Label(
             title_frame,
-            text="MINERVA BENCH TRACKER",
+            text="SYSTEM FUNCTION BENCH TRACKER",
             font=("Segoe UI", 18),
             fg=self.SILVER,
             bg=self.BG,
@@ -194,19 +207,22 @@ class LoginGateApp:
 
         self.short_id_var = tk.StringVar()
         self.short_id_entry = tk.Entry(
-            card, textvariable=self.short_id_var, font=("Segoe UI", 12), width=30,
+            card, textvariable=self.short_id_var, font=("Segoe UI", 13),
             bg=self.BG_INPUT, fg=self.TEXT, insertbackground=self.TEXT, relief="flat", bd=0,
             highlightbackground=self.BORDER, highlightthickness=1, highlightcolor="#3a3a3a",
         )
-        self.short_id_entry.pack(ipady=7, pady=(0, 12))
+        self.short_id_entry.pack(ipady=8, pady=(0, 12), fill="x")
         self.short_id_entry.focus_set()
 
         tk.Label(card, text="PURPOSE OF USE", font=("Segoe UI", 8), fg=self.SILVER, bg=self.BG_CARD, anchor="w").pack(fill="x", pady=(0, 3))
 
         self.purpose_var = tk.StringVar()
         purposes = [
-            "ECU Flashing", "Diagnostic Testing", "CAN Communication",
-            "Software Debug", "Calibration", "HIL Testing", "Log Collection", "Other",
+            "Automation Execution", "Automation Integration",
+            "Bench Debugging (HW)", "Software Flashing",
+            "Diagnostic (SEM) Testing", "Execution Analysis",
+            "Log Collection", "Manual Execution",
+            "Night Run Execution - DND", "Software Debugging",
         ]
 
         style = ttk.Style()
@@ -214,7 +230,7 @@ class LoginGateApp:
         style.configure("Dark.TCombobox", fieldbackground=self.BG_INPUT, background=self.BG_INPUT,
             foreground=self.TEXT, bordercolor=self.BORDER, arrowcolor=self.SILVER,
             selectbackground=self.BG_INPUT, selectforeground=self.TEXT,
-            arrowsize=20, padding=(8, 5))
+            insertcolor=self.TEXT, arrowsize=20, padding=(8, 5))
         style.map("Dark.TCombobox",
             fieldbackground=[("readonly", self.BG_INPUT), ("focus", self.BG_INPUT)],
             background=[("readonly", self.BG_INPUT), ("active", "#1c1c1c")],
@@ -236,29 +252,41 @@ class LoginGateApp:
         self.error_label.pack(pady=(0, 8))
 
         self.submit_btn = tk.Button(card, text="CHECK IN & START", font=("Segoe UI", 11, "bold"),
-            bg=self.GREEN, fg="#0a0a0a", activebackground="#00c853", activeforeground="#0a0a0a",
+            bg="#ffffff", fg="#0a0a0a", activebackground="#e0e0e0", activeforeground="#0a0a0a",
             relief="flat", cursor="hand2", command=self.submit, width=25, height=1)
         self.submit_btn.pack(ipady=6, pady=(0, 5))
 
         self.short_id_entry.bind("<Return>", lambda e: self.purpose_combo.focus_set())
         self.purpose_combo.bind("<Return>", lambda e: self.submit())
 
+    def _rotate_logo(self):
+        self._logo_frame_idx = (self._logo_frame_idx + 1) % len(self._logo_frames)
+        self._logo_label.config(image=self._logo_frames[self._logo_frame_idx])
+        self.root.after(50, self._rotate_logo)
+
     def submit(self):
+        if getattr(self, "_submitting", False):
+            return
+        self._submitting = True
+
         short_id = self.short_id_var.get().strip()
         purpose = self.purpose_var.get().strip()
 
         if not short_id:
             self.error_var.set("Please enter your Short ID")
             self.short_id_entry.focus_set()
+            self._submitting = False
             return
 
         if not purpose:
             self.error_var.set("Please select or enter a purpose")
             self.purpose_combo.focus_set()
+            self._submitting = False
             return
 
         self.error_var.set("")
-        self.submit_btn.config(state="disabled", text="Checking in...")
+        self.submit_btn.config(state="disabled", text="Checking in...", bg=self.GREEN)
+        self.root.update_idletasks()
 
         payload = {
             "bench_id": self.config["bench_id"],
@@ -268,16 +296,21 @@ class LoginGateApp:
             "access_method": self.access_method,
         }
 
-        success = send_checkin(self.config["server_url"], self.config["timeout"], payload)
+        self.root.after(50, lambda: self._do_checkin(payload))
 
-        if not success:
-            save_local(payload)
-            self.error_var.set("Server offline — logged locally. You may proceed.")
+    def _do_checkin(self, payload):
+        def _worker():
+            success = send_checkin(self.config["server_url"], self.config["timeout"], payload)
+            if not success:
+                save_local(payload)
+                self.root.after(0, lambda: self.error_var.set("Server offline - logged locally. You may proceed."))
+            self.root.after(300, self.close_gate)
 
-        self.root.after(500, self.close_gate)
+        t = threading.Thread(target=_worker, daemon=True)
+        t.start()
 
     def close_gate(self):
-        logging.info("Login gate closing — user checked in")
+        logging.info("Login gate closing - user checked in")
         self.root.grab_release()
         self.root.destroy()
 
@@ -296,7 +329,6 @@ def acquire_lock():
         try:
             with open(LOCK_FILE, "r") as f:
                 pid = int(f.read().strip())
-            import ctypes
             kernel32 = ctypes.windll.kernel32
             handle = kernel32.OpenProcess(0x1000, False, pid)
             if handle:

@@ -1,0 +1,200 @@
+variables:
+  SWF_DOMAIN: swf.i.mercedes-benz.com
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
+
+default:
+  tags:
+    - shared-small-x86-linux
+  image: artifact.${SWF_DOMAIN}/dockerhub/python:3.8-slim
+  before_script:
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install -r requirements.txt -r requirements-dev.txt
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_COMMIT_TAG
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+
+cache:
+  paths:
+    - .cache/pip
+
+.rules:
+  tag:
+    - if: $CI_COMMIT_TAG && $CI_PIPELINE_SOURCE == "push"
+  default-branch:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+  merge-request:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  lint-and-test:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_COMMIT_TAG && $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+  integration-test:
+    # - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_LABELS =~ /.*int-test.*/
+      when: manual
+
+stages:
+  - test
+  - build
+  - package
+  - int-test
+  - publish
+  - release
+
+pytest:
+  needs: [ ]
+  stage: test
+  rules:
+    - !reference [.rules, lint-and-test]
+  script:
+    - pytest
+
+docker:
+  needs: [ ]
+  stage: build
+  image:
+    name: gcr.io/kaniko-project/executor:v1.9.2-debug
+    entrypoint: [""]
+  cache: { }
+  before_script:
+    - echo ${DOCKER_AUTH_CONFIG} > /kaniko/.docker/config.json
+  script:
+    - /kaniko/executor
+      --context "${CI_PROJECT_DIR}"
+      --dockerfile "${CI_PROJECT_DIR}/Dockerfile"
+      --ignore-path "${CI_PROJECT_DIR}/src/venv"
+      --destination "artifact.swf.i.mercedes-benz.com/adasdai-docker/drburn:${CI_COMMIT_SHORT_SHA}"
+      $(if [ ${CI_COMMIT_BRANCH} = ${CI_DEFAULT_BRANCH} ]; then echo "--destination artifact.swf.i.mercedes-benz.com/adasdai-docker/drburn:latest"; fi)
+      $(if [ -z "${CI_COMMIT_TAG}" ]; then echo "--destination artifact.swf.i.mercedes-benz.com/adasdai-docker/drburn:${CI_COMMIT_REF_SLUG}"; fi)
+      $(if [ -n "${CI_COMMIT_TAG}" ]; then echo "--destination artifact.swf.i.mercedes-benz.com/adasdai-docker/drburn:${CI_COMMIT_TAG}"; fi)
+
+###########
+# MTTF test
+###########
+integration-test:
+  # https://adasdai.docs.swf.i.mercedes-benz.com/mttf-test/ci-cd/trigger/
+  allow_failure: true
+  stage: int-test
+  needs:
+    - job: pytest
+      optional: true
+  rules:
+    - !reference [.rules, integration-test]
+  variables:
+      # https://adasdai.docs.swf.i.mercedes-benz.com/mttf-test/ci-cd/artifact-resolving/
+      DDU_URL: lkg:Master_ATGB_Base_ST3.0_Dev
+      ADAPTIVE_URL: latest
+      DRBURN_BRANCH_NAME: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME
+      QUICK_TEST_TEST_CONFIG: master_base_st3
+      QUICK_TEST_TEST_SET: quick
+      QUICK_TEST_ADDITIONAL_ARGUMENTS: skip
+      TEST_BENCH_HW_VARIANT: entry
+      TEST_BENCH_EE_ARCHITECTURE: st3
+      UPSTREAM_PROJECT: $CI_PROJECT_PATH
+      UPSTREAM_MERGE_REQUEST_ID: $CI_MERGE_REQUEST_IID
+      BUILD_TYPE: merge-request
+      QUICK_TEST_IMAGE: artifacts.swf.i.mercedes-benz.com/adasdai-docker/quicktest:master
+      TEST_BENCH_ACCESS_GROUP: MTTF_IDC_CI_RELEASE_MASTER
+  trigger:
+    forward:
+      pipeline_variables: false
+      yaml_variables: true
+    project: adasdai/mttf-test
+    strategy: depend
+
+pyinstaller:
+  needs: []
+  stage: package
+  image: artifact.${SWF_DOMAIN}/dockerhub/python:3.8-slim-bullseye
+  cache: {}
+  script:
+    - apt-get update && apt-get install -y binutils
+    - rm -rf src/venv
+    - pip install -U pyinstaller
+    - pyinstaller src/drburn.py -p src -p venv/lib/python3.8/site-packages
+      --add-data "venv/lib/python3.8/site-packages/pyfiglet:./pyfiglet"
+      --add-data "src/flashing/ddu/flash_ddu.sh:./src/flashing/ddu"
+      --onefile
+  artifacts:
+    paths:
+      - dist/drburn
+      - drburn.spec
+
+publish[release]:
+  needs: [ pyinstaller ]
+  stage: publish
+  cache: {}
+  before_script: []
+  rules:
+    - !reference [.rules, tag]
+  variables:
+    ARTIFACTORY_USER: ""
+    ARTIFACTORY_PASSWORD: ""
+  script:
+    - apt-get update && apt-get install -y curl tar xz-utils
+    - mkdir -p dist/app/etc
+    - cp dist/drburn dist/app/
+    - cp README.md dist/app/
+    - cp etc/drburn.desktop dist/app/etc/
+    - cp etc/icon.png dist/app/etc/
+    - (cd dist && tar cJf drburn_${CI_COMMIT_TAG}.tar.xz app/)
+    # default
+    - curl -X PUT -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD}" --data-binary @dist/drburn https://artifact.swf.i.mercedes-benz.com/artifactory/adasdai/drburn/drburn_${CI_COMMIT_TAG}/drburn_${CI_COMMIT_TAG}
+    - curl -X PUT -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD}" --data-binary @dist/drburn_${CI_COMMIT_TAG}.tar.xz https://artifact.swf.i.mercedes-benz.com/artifactory/adasdai/drburn/drburn_${CI_COMMIT_TAG}/drburn_${CI_COMMIT_TAG}.tar.xz
+    # dspc:
+    - curl -X PUT -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD}" --data-binary @dist/drburn https://artifact.swf.i.mercedes-benz.com/artifactory/adasdspc/minerva-sit/drburn/drburn_${CI_COMMIT_TAG}/drburn_${CI_COMMIT_TAG}
+    - curl -X PUT -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD}" --data-binary @dist/drburn_${CI_COMMIT_TAG}.tar.xz https://artifact.swf.i.mercedes-benz.com/artifactory/adasdspc/minerva-sit/drburn/drburn_${CI_COMMIT_TAG}/drburn_${CI_COMMIT_TAG}.tar.xz
+    # legacy dspc:
+    - curl -X PUT -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD}" --data-binary @dist/drburn https://artifact.swf.i.mercedes-benz.com/artifactory/adasdai/minerva-sit/drburn/drburn_${CI_COMMIT_TAG}/drburn_${CI_COMMIT_TAG}
+    - curl -X PUT -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD}" --data-binary @dist/drburn_${CI_COMMIT_TAG}.tar.xz https://artifact.swf.i.mercedes-benz.com/artifactory/adasdai/minerva-sit/drburn/drburn_${CI_COMMIT_TAG}/drburn_${CI_COMMIT_TAG}.tar.xz
+  artifacts:
+    paths:
+      - dist/drburn_*.tar.xz
+
+publish[feature]:
+  needs: [ pyinstaller ]
+  stage: publish
+  cache: {}
+  before_script: []
+  rules:
+    - !reference [.rules, merge-request]
+  variables:
+    ARTIFACTORY_USER: ""
+    ARTIFACTORY_PASSWORD: ""
+  script:
+    - apt-get update && apt-get install -y curl
+    - curl -X PUT -u "${ARTIFACTORY_USER}:${ARTIFACTORY_PASSWORD}" --data-binary @dist/drburn https://artifact.swf.i.mercedes-benz.com/artifactory/adasdai/drburn/branches/${CI_COMMIT_REF_SLUG}/drburn_${CI_COMMIT_REF_SLUG}
+
+release:
+  needs: [ pytest, docker, pyinstaller, "publish[release]" ]
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  cache: {}
+  before_script: []
+  rules:
+    - !reference [.rules, tag]
+  script:
+    - echo "running release"
+  release:
+    tag_name: '$CI_COMMIT_TAG'
+    description: '$CI_COMMIT_TAG'
+    assets:
+      links:
+        - name: artifactory ui
+          url: https://artifact.swf.i.mercedes-benz.com/ui/repos/tree/General/adasdai/drburn/drburn_${CI_COMMIT_TAG}
+        - name: drburn/drburn_${CI_COMMIT_TAG}
+          url: https://artifact.swf.i.mercedes-benz.com/artifactory/adasdai/drburn/drburn_${CI_COMMIT_TAG}/drburn_${CI_COMMIT_TAG}
+        - name: drburn/drburn_${CI_COMMIT_TAG}.tar.xz
+          url: https://artifact.swf.i.mercedes-benz.com/artifactory/adasdai/drburn/drburn_${CI_COMMIT_TAG}/drburn_${CI_COMMIT_TAG}.tar.xz
+        - name: artifactory ui (minerva-sit)
+          url: https://artifact.swf.i.mercedes-benz.com/ui/repos/tree/General/adasdspc/minerva-sit/drburn/drburn_${CI_COMMIT_TAG}
+        - name: minerva-sit/drburn/drburn_${CI_COMMIT_TAG}
+          url: https://artifact.swf.i.mercedes-benz.com/artifactory/adasdspc/minerva-sit/drburn/drburn_${CI_COMMIT_TAG}/drburn_${CI_COMMIT_TAG}
+        - name: minerva-sit/drburn/drburn_${CI_COMMIT_TAG}.tar.xz
+          url: https://artifact.swf.i.mercedes-benz.com/artifactory/adasdspc/minerva-sit/drburn/drburn_${CI_COMMIT_TAG}/drburn_${CI_COMMIT_TAG}.tar.xz
+        - name: adasdai-docker/drburn/${CI_COMMIT_TAG}
+          url: https://artifact.swf.i.mercedes-benz.com/ui/repos/tree/General/adasdai-docker/drburn/${CI_COMMIT_TAG}

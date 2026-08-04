@@ -1,0 +1,139 @@
+=============================================
+ DEPLOYMENT TASK — All Benches
+ Same setup as Magadha (tested & working)
+=============================================
+
+FILES TO COPY TO EACH BENCH:
+  1. session_monitor.py  (from client_windows/)
+  2. startup_cleanup.py  (from client_windows/)
+
+=============================================
+ VIJAYANAGARA (Bench 1) — C:\Users\PIDDB58
+=============================================
+
+cd C:\Users\PIDDB58\Documents\Bench_Usage_Automation
+taskkill /f /im pythonw.exe
+del .login_gate.lock 2>nul
+del .session_monitor.lock 2>nul
+del session_monitor.log 2>nul
+schtasks /delete /tn "BenchSessionMonitor" /f
+schtasks /delete /tn "BenchSessionMonitorWatchdog" /f
+schtasks /delete /tn "BenchStartupCleanup" /f
+schtasks /create /tn "BenchStartupCleanup" /tr "\"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\startup_cleanup.py\"" /sc onstart /ru SYSTEM /rl highest /f
+schtasks /create /tn "BenchSessionMonitor" /tr "\"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\session_monitor.py\"" /sc onlogon /rl highest /f
+schtasks /create /tn "BenchSessionMonitorWatchdog" /tr "\"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\session_monitor.py\"" /sc minute /mo 5 /rl highest /f
+start "" venv\Scripts\pythonw.exe session_monitor.py
+
+=============================================
+ MAURYA (Bench 2) — C:\Users\PIDDB58
+=============================================
+
+cd C:\Users\PIDDB58\Documents\Bench_Usage_Automation
+taskkill /f /im pythonw.exe
+del .login_gate.lock 2>nul
+del .session_monitor.lock 2>nul
+del session_monitor.log 2>nul
+schtasks /delete /tn "BenchSessionMonitor" /f
+schtasks /delete /tn "BenchSessionMonitorWatchdog" /f
+schtasks /delete /tn "BenchStartupCleanup" /f
+schtasks /create /tn "BenchStartupCleanup" /tr "\"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\startup_cleanup.py\"" /sc onstart /ru SYSTEM /rl highest /f
+schtasks /create /tn "BenchSessionMonitor" /tr "\"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\session_monitor.py\"" /sc onlogon /rl highest /f
+schtasks /create /tn "BenchSessionMonitorWatchdog" /tr "\"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\session_monitor.py\"" /sc minute /mo 5 /rl highest /f
+start "" venv\Scripts\pythonw.exe session_monitor.py
+
+=============================================
+ CHOLA (Bench 3) — C:\Users\PIDDB58
+=============================================
+
+cd C:\Users\PIDDB58\Documents\Bench_Usage_Automation
+taskkill /f /im pythonw.exe
+del .login_gate.lock 2>nul
+del .session_monitor.lock 2>nul
+del session_monitor.log 2>nul
+schtasks /delete /tn "BenchSessionMonitor" /f
+schtasks /delete /tn "BenchSessionMonitorWatchdog" /f
+schtasks /delete /tn "BenchStartupCleanup" /f
+schtasks /create /tn "BenchStartupCleanup" /tr "\"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\startup_cleanup.py\"" /sc onstart /ru SYSTEM /rl highest /f
+schtasks /create /tn "BenchSessionMonitor" /tr "\"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\session_monitor.py\"" /sc onlogon /rl highest /f
+schtasks /create /tn "BenchSessionMonitorWatchdog" /tr "\"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\PIDDB58\Documents\Bench_Usage_Automation\session_monitor.py\"" /sc minute /mo 5 /rl highest /f
+start "" venv\Scripts\pythonw.exe session_monitor.py
+
+=============================================
+ PALLAVA (Bench 5) — C:\Users\pidd85D
+=============================================
+
+cd C:\Users\pidd85D\Documents\Bench_Usage_Automation
+taskkill /f /im pythonw.exe
+del .login_gate.lock 2>nul
+del .session_monitor.lock 2>nul
+del session_monitor.log 2>nul
+schtasks /delete /tn "BenchSessionMonitor" /f
+schtasks /delete /tn "BenchSessionMonitorWatchdog" /f
+schtasks /delete /tn "BenchStartupCleanup" /f
+schtasks /create /tn "BenchStartupCleanup" /tr "\"C:\Users\pidd85D\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\pidd85D\Documents\Bench_Usage_Automation\startup_cleanup.py\"" /sc onstart /ru SYSTEM /rl highest /f
+schtasks /create /tn "BenchSessionMonitor" /tr "\"C:\Users\pidd85D\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\pidd85D\Documents\Bench_Usage_Automation\session_monitor.py\"" /sc onlogon /rl highest /f
+schtasks /create /tn "BenchSessionMonitorWatchdog" /tr "\"C:\Users\pidd85D\Documents\Bench_Usage_Automation\venv\Scripts\pythonw.exe\" \"C:\Users\pidd85D\Documents\Bench_Usage_Automation\session_monitor.py\"" /sc minute /mo 5 /rl highest /f
+start "" venv\Scripts\pythonw.exe session_monitor.py
+
+=============================================
+ VERIFY EACH BENCH (run after deploy)
+=============================================
+
+echo === PROCESSES ===
+tasklist | findstr python
+echo === FILES ===
+dir session_monitor.py startup_cleanup.py
+echo === CONFIG ===
+type config.ini
+echo === TASKS ===
+schtasks /query /tn "BenchStartupCleanup"
+schtasks /query /tn "BenchSessionMonitor"
+schtasks /query /tn "BenchSessionMonitorWatchdog"
+echo === LOG ===
+type session_monitor.log
+
+=============================================
+ EXPECTED RESULTS
+=============================================
+
+- 2 python processes (monitor + login gate)
+- Both files present (session_monitor.py + startup_cleanup.py)
+- Correct bench_id in config.ini:
+    Vijayanagara = 1
+    Maurya = 2
+    Chola = 3
+    Magadha = 4 (already done)
+    Pallava = 5
+- BenchStartupCleanup: N/A, Ready
+- BenchSessionMonitor: N/A, Ready (or Running)
+- BenchSessionMonitorWatchdog: ~5 min from now, Ready
+- Log shows "Session monitor started" + "Launching login gate"
+
+=============================================
+ TEST AFTER DEPLOY (per bench)
+=============================================
+
+TEST 1 — Normal RDP:
+  - Disconnect RDP → dashboard releases within 10s
+  - Reconnect RDP → login gate appears (once)
+  - Check in → dashboard shows occupied
+
+TEST 2 — Restart:
+  - Restart bench (Start menu or dashboard button)
+  - Dashboard releases within 2-3 min (startup_cleanup)
+  - Log back in → login gate appears
+
+TEST 3 — Watchdog:
+  - Kill: taskkill /f /im pythonw.exe
+  - Wait 5 minutes
+  - Check: tasklist | findstr python (should show 2 again)
+
+=============================================
+ NOTES
+=============================================
+
+- Magadha (Bench 4) is ALREADY DONE and tested
+- Copy files BEFORE running commands
+- Run commands in CMD as Administrator
+- If schtasks /delete shows "not found" — ignore, just means it wasn't there
+- After restart test, wait 2-3 min for startup_cleanup to send checkout

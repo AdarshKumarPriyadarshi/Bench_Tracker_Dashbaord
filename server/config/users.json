@@ -1,16 +1,52 @@
 {
     "users": {
-        "ADPRIYA": {
-            "name": "Adarsh Priyadarshi",
-            "email": "adarsh.priyadarshi@mercedes-benz.com"
+        "MONAYAZ": {
+            "name": "Mohammed Nayaz",
+            "email": "mohammed.nayaz@mercedes-benz.com"
         },
-        "BHARAB": {
-            "name": "Tata A B",
+        "MISKINS": {
+            "name": "Suraj Miskin",
+            "email": "tata.miskin@mercedes-benz.com"
+        },
+        "BHARAB3": {
+            "name": "Bharath B",
             "email": "tata.a.b@mercedes-benz.com"
+        },
+        "SURYAJ": {
+            "name": "Surya J",
+            "email": "tata.j@mercedes-benz.com"
+        },
+        "SSIKKAN": {
+            "name": "Salmankan Sikkanthar",
+            "email": "salmankan.sikkanthar@mercedes-benz.com"
+        },
+        "VYSIYAS": {
+            "name": "Vysiya S",
+            "email": "tata.s@mercedes-benz.com"
+        },
+        "KAKAKDE": {
+            "name": "Kajal Gunwant Kakde",
+            "email": "kajal_gunwant.kakde@mercedes-benz.com"
         },
         "GURAHUL": {
             "name": "Rahul Gupta",
             "email": "kpit.gupta@mercedes-benz.com"
+        },
+        "ADPRIYA": {
+            "name": "Adarsh Priyadarshi",
+            "email": "adarsh.priyadarshi@mercedes-benz.com"
+        },
+        "GCHIRAN": {
+            "name": "G Chiranjeevi",
+            "email": "gunturu.chiranjeevi@mercedes-benz.com"
+        },
+        "YSUSHMA": {
+            "name": "Sushma Y V",
+            "email": "tata.sushma@mercedes-benz.com"
+        },
+        "BPEMMAR": {
+            "name": "Bhavya Sri Pemmaraju",
+            "email": "bhavya_sri.pemmaraju@mercedes-benz.com"
         }
     }
 }

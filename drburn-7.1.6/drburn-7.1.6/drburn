@@ -1,0 +1,17 @@
+#!/bin/bash
+PWD=$(pwd)
+ACTIVATE_VENV="source $PWD/src/venv/bin/activate"
+TERMINAL="$PWD/src/drburn.py"
+
+args="$@"
+
+terminal(){
+  $ACTIVATE_VENV && python3 $TERMINAL $args
+}
+#echo $PWD
+#echo $ACTIVATE_VENV
+#echo $TERMINAL
+terminal
+returnvalue=$?
+echo "Exit status: $returnvalue"
+exit $returnvalue

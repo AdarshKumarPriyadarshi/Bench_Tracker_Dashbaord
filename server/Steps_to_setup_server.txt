@@ -1,7 +1,7 @@
 MBRDI Minerva Bench Tracker - Server Setup Steps
 ==================================================
 
-Server PC: Linux (53.217.54.191)
+Server PC: Linux (c623drd41380439)
 Folder:    ~/Desktop/Bench_Usage_Automation/server/
 
 --------------------------------------------------
@@ -31,8 +31,8 @@ START SERVER
 
    ./run_server.sh
 
-   Dashboard:  http://53.217.54.191:8000
-   History:    http://53.217.54.191:8000/history
+   Dashboard:  http://c623drd41380439:8000
+   History:    http://c623drd41380439:8000/history
 
 --------------------------------------------------
 RUN IN BACKGROUND (so it survives terminal close)

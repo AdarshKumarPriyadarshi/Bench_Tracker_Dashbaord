@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Defect Board | System Function Bench Tracker</title>
+    <link rel="icon" href="/static/MBRDI.png" type="image/png">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/defect_board.css">
+    <script src="/static/js/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left" onclick="window.location='/'" style="cursor:pointer;">
+            <img src="/static/MBRDI.png" alt="MBRDI" class="header-logo">
+            <div class="header-titles">
+                <h1>System Function Bench Tracker</h1>
+                <span class="header-subtitle">Mercedes-Benz Research &amp; Development India</span>
+            </div>
+        </div>
+        <div class="header-right">
+            <span class="live-indicator">
+                <span class="live-dot"></span>
+                Live
+                <span id="defect-last-updated" style="margin-left:0.6rem;font-size:0.55rem;color:var(--text-muted);letter-spacing:0.04em;"></span>
+            </span>
+            <a href="/" class="btn btn-secondary">Dashboard</a>
+            <a href="/history" class="btn btn-secondary">History</a>
+            <a href="/statistics" class="btn btn-secondary">Statistics</a>
+            <a href="/defect-board" class="btn btn-active">Defect Board</a>
+        </div>
+    </div>
+
+    <div class="defect-page-container">
+        <!-- Filters -->
+        <div class="defect-filters">
+            <div class="filter-group">
+                <label class="filter-label">RELEASE VERSION</label>
+                <select id="filter-release">
+                    <option value="">All Releases</option>
+                    <option value="R16">R16</option>
+                    <option value="R17">R17</option>
+                    <option value="R18">R18</option>
+                    <option value="R19">R19</option>
+                    <option value="R21">R21</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">RELEASE CANDIDATE</label>
+                <select id="filter-candidate">
+                    <option value="">All Candidates</option>
+                    <option value="MF4">MF4</option>
+                    <option value="MF5">MF5</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">SAFETY TYPE</label>
+                <select id="filter-safety">
+                    <option value="">All Safety</option>
+                    <option value="FUSA">FUSA</option>
+                    <option value="NON_FUSA">NON_FUSA</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button class="btn btn-secondary" onclick="applyFilters()">Apply</button>
+                <button class="btn btn-secondary" onclick="resetFilters()">Reset</button>
+                <button class="btn btn-secondary btn-refresh" onclick="refreshData()">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="defect-stats-row">
+            <div class="defect-stat-card">
+                <span class="defect-stat-value" id="stat-total">--</span>
+                <span class="defect-stat-label">Total Bugs</span>
+            </div>
+            <div class="defect-stat-card stat-ongoing">
+                <span class="defect-stat-value" id="stat-ongoing">--</span>
+                <span class="defect-stat-label">Ongoing</span>
+            </div>
+            <div class="defect-stat-card stat-closed">
+                <span class="defect-stat-value" id="stat-closed">--</span>
+                <span class="defect-stat-label">Closed</span>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="defect-charts-row">
+            <div class="defect-chart-panel">
+                <div class="defect-chart-header">
+                    <h3>Ongoing Status Distribution</h3>
+                </div>
+                <div class="defect-chart-body">
+                    <canvas id="status-donut-chart"></canvas>
+                </div>
+            </div>
+            <div class="defect-chart-panel">
+                <div class="defect-chart-header">
+                    <h3>Module Wise Distribution</h3>
+                    <span class="chart-subtitle">Ongoing defects per system function</span>
+                </div>
+                <div class="defect-chart-body">
+                    <canvas id="module-bar-chart"></canvas>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Category Tabs -->
+        <div class="category-tabs" id="category-tabs"></div>
+
+        <!-- SysFunc Table -->
+        <div class="defect-table-panel">
+            <div class="defect-table-header">
+                <h3>System Function Summary</h3>
+                <span class="table-subtitle" id="sysfunc-subtitle">All categories</span>
+            </div>
+            <div class="table-wrapper">
+                <table class="defect-table" id="sysfunc-table">
+                    <thead>
+                        <tr>
+                            <th>Acronym</th>
+                            <th>System Function</th>
+                            <th>Tester</th>
+                            <th>Ongoing</th>
+                            <th>Closed</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sysfunc-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Defect List Table -->
+        <div class="defect-table-panel">
+            <div class="defect-table-header">
+                <h3 id="defect-list-title">Defect List</h3>
+                <span class="table-subtitle" id="defect-count">Loading...</span>
+            </div>
+            <div class="table-wrapper">
+                <table class="defect-table defect-list-table" id="defect-list-table">
+                    <thead>
+                        <tr>
+                            <th>Key</th>
+                            <th>Status</th>
+                            <th>Priority</th>
+                            <th>Summary</th>
+                            <th>Reporter</th>
+                            <th>Assignee</th>
+                            <th>Comment</th>
+                        </tr>
+                    </thead>
+                    <tbody id="defect-list-body"></tbody>
+                </table>
+            </div>
+            <div class="pagination" id="pagination"></div>
+        </div>
+
+        <!-- Error state -->
+        <div class="defect-error" id="defect-error" style="display:none;">
+            <div class="error-icon">!</div>
+            <p class="error-text" id="error-text">Failed to load defect data</p>
+            <button class="btn btn-secondary" onclick="loadAll()">Retry</button>
+        </div>
+
+        <!-- Loading state -->
+        <div class="defect-loading" id="defect-loading" style="display:none;">
+            <div class="loading-spinner"></div>
+            <p>Loading defects from Jira...</p>
+        </div>
+    </div>
+
+    <div class="footer" style="display:flex;justify-content:center;align-items:center;padding:1.2rem 2.5rem;border-top:1px solid var(--border-color);margin-top:1rem;background:#1a1a1a;">
+        <p class="footer-text" style="color:var(--mercedes-silver);">&copy; 2026 Mercedes-Benz Research &amp; Development India. All Rights Reserved.</p>
+    </div>
+
+    <script src="/static/js/defect_board.js"></script>
+</body>
+</html>
