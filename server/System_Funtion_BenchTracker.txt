@@ -1,0 +1,777 @@
+=============================================================================================================
+                    SYSTEM FUNCTION BENCH TRACKER — COMPLETE INTERVIEW PREPARATION
+=============================================================================================================
+
+
+=============================================================================================================
+1. PROJECT OVERVIEW
+=============================================================================================================
+
+Project: System Function Bench Tracker
+Role: Full-Stack Developer & Solution Architect
+Organization: Mercedes-Benz Research & Development India (MBRDI)
+Duration: June 2026 (5-day core development + ongoing enhancements)
+Team Size: Solo developer (AI-assisted)
+
+PROBLEM STATEMENT:
+- 5 open-loop test benches shared across 15+ engineers (including external contractors)
+- No real-time visibility — nobody knew who was using which bench
+- Manual tracking via Teams group messages — unreliable, often outdated
+- Remote bench restarts impossible during overnight/weekend runs without physical presence
+- No clarity on which bench has which SW version or architecture (ST3/ST35)
+- People confused about bench availability, wasted time going to lab
+
+SOLUTION:
+- Automated real-time dashboard for bench tracking
+- Auto check-in on RDP connect (mandatory login gate)
+- Auto release on RDP disconnect
+- Remote restart capability (Windows + Linux) from dashboard
+- Usage statistics and analytics
+- Developed in 5 days using AI-assisted coding (Claude)
+
+
+=============================================================================================================
+2. TECHNICAL STACK
+=============================================================================================================
+
+BACKEND:
+- Python 3.11
+- FastAPI (web framework)
+- Uvicorn (ASGI server)
+- SQLite (database) with WAL mode
+- Pydantic (data validation)
+- Jinja2 (HTML templating)
+
+FRONTEND:
+- HTML5, CSS3 (dark theme, animations, gradients)
+- JavaScript (ES6+)
+- Chart.js (statistics charts)
+- No frontend framework — vanilla JS
+
+CLIENT-SIDE AUTOMATION:
+- Python
+- pywin32 (WTS event monitoring)
+- Tkinter (GUI for login gate)
+- Pillow/PIL (rotating logo animation)
+- threading (non-blocking HTTP calls)
+- requests (HTTP client)
+- subprocess (process management)
+- ctypes (Windows API calls)
+
+INFRASTRUCTURE:
+- Linux server (Ubuntu) — hosts FastAPI
+- Windows 11 bench PCs (5 total)
+- Windows Task Scheduler (auto-start, watchdog)
+- SSH/SCP (remote Linux operations)
+- net rpc (remote Windows operations)
+- sshpass (password-based SSH)
+
+TOOLS:
+- Git (version control)
+- sqlite3 CLI (database inspection)
+- WinSCP (file transfer)
+- Claude AI (development assistant)
+
+
+=============================================================================================================
+3. ARCHITECTURE — THREE LAYERS
+=============================================================================================================
+
+LAYER 1: CLIENT (per bench PC — Windows)
+├── session_monitor.py — Background process detecting session events
+├── login_gate.py — Fullscreen GUI blocking desktop until check-in
+└── startup_cleanup.py — Boot-time cleanup (runs as SYSTEM)
+
+LAYER 2: SERVER (one Linux PC)
+├── main.py — FastAPI app initialization, routing
+├── routes/bench_routes.py — Checkin/Checkout/Restart/Release APIs
+├── routes/history_routes.py — History/Statistics APIs
+├── database.py — SQLite CRUD operations
+├── models.py — Pydantic validation models
+├── config/ — benches.json, users.json, credentials.json
+└── static/ — CSS, JS, images
+
+LAYER 3: FRONTEND (browser)
+├── dashboard.html — Live bench status cards
+├── history.html — Usage history table + CSV export
+├── statistics.html — Charts + calendar heatmap
+├── bench_detail.html — Individual bench detail + per-bench stats
+├── dashboard.js — Polling, rendering, notifications
+├── statistics.js — Chart.js rendering
+└── dashboard.css — Dark theme styling
+
+
+=============================================================================================================
+4. DATA FLOW — COMPLETE LIFECYCLE
+=============================================================================================================
+
+CHECK-IN FLOW:
+1. User connects via RDP to bench PC
+2. Windows fires WTS_REMOTE_CONNECT event
+3. Session monitor receives it via WM_WTSSESSION_CHANGE message
+4. Debounce check (30s) + is_login_gate_running() check
+5. Launches login_gate.py (fullscreen, topmost, unclosable)
+6. User enters Short ID + Purpose, clicks "CHECK IN & START"
+7. Background thread sends POST /api/checkin to server
+8. Server validates (Pydantic), updates bench_status for both Windows + Linux
+9. Login gate closes, user has desktop access
+10. Dashboard polls in 5s, card turns red "Occupied"
+
+CHECK-OUT FLOW:
+1. User disconnects RDP (closes window)
+2. Windows fires WTS_REMOTE_DISCONNECT event
+3. Session monitor sends POST /api/checkout
+4. Server moves record to usage_history, clears bench_status
+5. Dashboard polls in 5s, card turns green "Available"
+6. Browser notification: "ADPRIYA checked out — Maurya"
+
+RESTART FLOW:
+1. User clicks Restart on dashboard → confirmation dialog → WINDOWS/LINUX
+2. Frontend sends POST /api/restart-bench
+3. Server validates bench is not occupied
+4. Reads credentials from credentials.json
+5. Windows: executes `net rpc shutdown -r -f -I <hostname> -U user%pass`
+6. Linux: executes `sshpass -p <pass> ssh user@host "echo pass | sudo -S reboot"`
+7. Dialog closes, toast notification shown
+8. startup_cleanup.py runs on boot → checkout → dashboard releases
+
+BOOT/RESTART RECOVERY:
+1. PC restarts (all processes die, no checkout sent)
+2. Windows boots → BenchStartupCleanup fires (SYSTEM, onstart)
+3. startup_cleanup.py: deletes stale .lock files + sends POST /api/checkout
+4. Dashboard releases bench (even before user logs in)
+5. User logs in → BenchSessionMonitor fires (onlogon)
+6. session_monitor.py starts → launches login gate
+7. User checks in → normal flow
+
+
+=============================================================================================================
+5. WTS — WINDOWS TERMINAL SERVICES
+=============================================================================================================
+
+WHAT IS WTS:
+Windows Terminal Services is a Windows API for monitoring user session events.
+Any application can register to receive notifications when sessions change state
+(login, logout, RDP connect/disconnect, screen lock/unlock).
+
+HOW WE REGISTER:
+    import win32ts
+    win32ts.WTSRegisterSessionNotification(hwnd, NOTIFY_FOR_ALL_SESSIONS)
+
+This registers our hidden window (created via win32gui) to receive
+WM_WTSSESSION_CHANGE (0x02B1) messages for ALL sessions on the machine.
+
+WTS EVENT CODES:
+
+Code  | Name                    | Trigger                          | Our Action
+------|-------------------------|----------------------------------|---------------------------
+0x1   | WTS_CONSOLE_CONNECT     | Physical user logs in            | Launch login gate
+0x2   | WTS_CONSOLE_DISCONNECT  | Console detaches (RDP takes over)| Delayed 5s verify → checkout
+0x3   | WTS_REMOTE_CONNECT      | RDP session connects             | Launch login gate
+0x4   | WTS_REMOTE_DISCONNECT   | RDP session disconnects          | Checkout immediately
+0x5   | WTS_SESSION_LOGON       | User logs into Windows           | Launch login gate
+0x6   | WTS_SESSION_LOGOFF      | User logs off                    | Checkout immediately
+0x7   | WTS_SESSION_LOCK        | User presses Win+L               | Checkout immediately
+0x8   | WTS_SESSION_UNLOCK      | User unlocks screen              | Launch login gate
+
+OUR CATEGORIZATION:
+    RELEASE_EVENTS = (WTS_SESSION_LOCK, WTS_SESSION_LOGOFF, WTS_REMOTE_DISCONNECT)
+    RESUME_EVENTS = (WTS_SESSION_UNLOCK, WTS_CONSOLE_CONNECT, WTS_REMOTE_CONNECT, WTS_SESSION_LOGON)
+
+    CONSOLE_DISCONNECT: handled separately with delayed verification
+    (fires spuriously during RDP handshake — can't trust immediately)
+
+
+=============================================================================================================
+6. TKINTER — LOGIN GATE GUI
+=============================================================================================================
+
+WHAT IS TKINTER:
+Python's built-in GUI library. Comes pre-installed with Python — no pip install needed.
+Creates desktop windows, buttons, text fields, dropdowns.
+
+WHY TKINTER:
+- Built-in — no extra install on bench PCs
+- Lightweight — login gate is a simple form
+- Works reliably over RDP sessions
+- Fullscreen blocking capability
+- No external dependencies
+
+KEY FEATURES USED:
+- root.attributes("-fullscreen", True) — covers entire screen
+- root.attributes("-topmost", True) — always on top of other windows
+- root.protocol("WM_DELETE_WINDOW", block) — blocks X button
+- root.bind("<Alt-F4>", block) — blocks Alt+F4
+- root.grab_set() — captures all input, can't click behind
+- ttk.Combobox — dropdown for purpose selection
+- tk.Entry — text input for Short ID
+- root.after(50, callback) — schedule threaded HTTP call
+
+THREADING IN TKINTER:
+HTTP calls run in background thread to prevent "Not Responding" freeze:
+    def _do_checkin(self, payload):
+        def _worker():
+            success = send_checkin(...)
+            self.root.after(300, self.close_gate)
+        t = threading.Thread(target=_worker, daemon=True)
+        t.start()
+
+
+=============================================================================================================
+7. WHY FASTAPI
+=============================================================================================================
+
+REASONS:
+1. Automatic validation — Pydantic models auto-reject bad input with 422 errors
+2. Built-in Swagger docs — /docs endpoint for free API documentation
+3. Async support — handles concurrent polling from multiple browsers
+4. Lightweight — perfect for internal tool (5-10 concurrent users)
+5. Type hints — cleaner code, better IDE support
+6. Fast — one of the fastest Python frameworks (Starlette + Uvicorn)
+
+COMPARED TO ALTERNATIVES:
+- Flask: No built-in validation, no async, no auto-docs
+- Django: Too heavy for a small API, ORM overkill for SQLite
+- FastAPI: Perfect balance of features, speed, and simplicity
+
+PYDANTIC VALIDATION EXAMPLE:
+    class CheckinRequest(BaseModel):
+        bench_id: int = Field(ge=1, le=5)
+        pc_type: str = Field(pattern="^(windows|linux)$")
+        short_id: str = Field(min_length=1, max_length=50, pattern="^[A-Za-z0-9_]+$")
+        purpose: str = Field(min_length=1, max_length=200)
+        access_method: str = Field(pattern="^(rdp|nomachine|physical)$")
+
+    @field_validator("purpose")
+    def sanitize_purpose(cls, v):
+        return re.sub(r'<[^>]+>', '', v).strip()  # Strip HTML tags
+
+
+=============================================================================================================
+8. DATABASE SCHEMA
+=============================================================================================================
+
+TABLE: bench_status (current state)
+    bench_id INTEGER NOT NULL
+    pc_type TEXT NOT NULL ('windows' or 'linux')
+    status TEXT NOT NULL ('available' or 'occupied')
+    short_id TEXT
+    purpose TEXT
+    access_method TEXT ('rdp', 'nomachine', 'physical')
+    start_time TEXT (ISO format)
+    PRIMARY KEY (bench_id, pc_type)
+
+TABLE: usage_history (all past sessions)
+    id INTEGER PRIMARY KEY AUTOINCREMENT
+    bench_id INTEGER NOT NULL
+    pc_type TEXT NOT NULL
+    short_id TEXT NOT NULL
+    purpose TEXT NOT NULL
+    access_method TEXT
+    start_time TEXT NOT NULL
+    end_time TEXT
+    duration_min REAL
+
+ON CHECKIN: UPDATE bench_status SET status='occupied', short_id=?, purpose=?, ...
+ON CHECKOUT: INSERT INTO usage_history (...) + UPDATE bench_status SET status='available'
+
+SQLite WITH WAL MODE:
+    conn.execute("PRAGMA journal_mode=WAL")
+    - Allows concurrent reads while one writer
+    - No lock contention for polling + updates
+    - Perfect for our scale (5 benches, 15 users)
+
+
+=============================================================================================================
+9. API ENDPOINTS
+=============================================================================================================
+
+PAGE ROUTES (HTML):
+    GET /              → Dashboard page
+    GET /history       → Usage history page
+    GET /statistics    → Statistics/analytics page
+    GET /bench/{id}    → Individual bench detail
+
+API ROUTES (JSON):
+    POST /api/checkin           → Check in to a bench
+    POST /api/checkout          → Release a bench
+    GET  /api/benches           → Get all bench status + metadata
+    GET  /api/bench/{id}        → Get single bench detail
+    GET  /api/history           → Get usage history (with filters)
+    GET  /api/statistics        → Get aggregated statistics
+    GET  /api/users             → Get all registered users
+    POST /api/request-release   → Request bench release (Teams link)
+    POST /api/restart-bench     → Remote restart (Windows/Linux)
+    POST /api/update-bench-sw   → Update SW version from Dr. Burn
+    GET  /api/health            → Health check
+
+
+=============================================================================================================
+10. SAFETY MECHANISMS — SESSION MONITOR
+=============================================================================================================
+
+1. DEBOUNCE (30 seconds):
+   - No login gate launched within 30s of previous launch
+   - Prevents double login gate from rapid WTS events
+
+2. is_login_gate_running():
+   - Checks .login_gate.lock file → reads PID → OpenProcess() to verify alive
+   - Falls back to WMIC: checks pythonw.exe command lines for "login_gate"
+   - Prevents launching if already open
+
+3. _last_lock_time (15 second cooldown):
+   - After Win+L (SESSION_LOCK), ignore all RESUME events for 15s
+   - Prevents false REMOTE_CONNECT from re-occupying after lock
+
+4. DELAYED DISCONNECT CHECK (5 seconds):
+   - CONSOLE_DISCONNECT fires during RDP handshake (false positive)
+   - Wait 5s → check WTSEnumerateSessions → confirm actually disconnected
+   - Only then send checkout
+
+5. CHECKOUT DEBOUNCE (10 seconds):
+   - No duplicate checkout within 10s
+   - Multiple disconnect events may fire within milliseconds
+
+6. WATCHDOG (MAX_RESTARTS = 50):
+   - Entire main loop wrapped in try/except
+   - On crash: log error, wait 10s, restart
+   - After 50 crashes: stop (something fundamentally broken)
+
+7. is_another_monitor_running():
+   - On startup: check .session_monitor.lock → PID alive?
+   - If alive → exit (prevent duplicates from scheduled task)
+   - If dead → overwrite lock, continue
+
+8. startup_cleanup.py:
+   - Runs as SYSTEM on boot (before login)
+   - Deletes stale .lock files
+   - Sends checkout (clears dashboard)
+
+
+=============================================================================================================
+11. FRONTEND FEATURES
+=============================================================================================================
+
+LIVE DASHBOARD:
+- Polling every 5 seconds (setInterval)
+- Only re-renders changed cards (diff-based update)
+- Card flip animation on status change
+- Timer color shifts: white(0-15m) → yellow(15-30m) → orange(30-45m) → red(60m+)
+- Toast notifications on checkin/checkout
+- Browser desktop notifications (Notification API)
+- Page Visibility API: instant refresh on tab focus, full reload after 10min hidden
+- "Server Offline" banner if API unreachable
+- "Updated: Xs ago" timestamp
+
+VISUAL ENHANCEMENTS:
+- Dark theme (pure black background)
+- Card hover lift (top: -6px)
+- Ripple border animation on hover
+- Status dot blinking (green/red/architecture)
+- Staggered card entrance animation (fadeInUp)
+- Mercedes logo rotation on hover + page load
+- Glassmorphism on stats bar
+- Card border gradient (green for available, red for occupied)
+- Purpose shown as amber pill badge
+- Purple card when purpose = "Software Flashing"
+
+STATISTICS PAGE:
+- Peak Hours chart (bar — sessions by hour)
+- Daily Sessions chart (bar — sessions by day)
+- Usage by Bench (pie chart with connector labels)
+- Usage by User (horizontal bar chart)
+- Calendar heatmap (Mercedes blue gradient)
+- Summary cards (total sessions, avg duration, top user, etc.)
+- Filters: bench, user, date range
+- Chart lightbox (click to zoom)
+
+HISTORY PAGE:
+- Table with bench name, user, purpose, start/end time, duration
+- Bench filter dropdown
+- Short ID partial search (startsWith)
+- Record limit selector (50/100/200/500)
+- CSV export button
+- Duration color coding
+
+
+=============================================================================================================
+12. CHALLENGES & SOLUTIONS
+=============================================================================================================
+
+CHALLENGE 1: Corporate Proxy Blocking Internal Requests
+Problem: HTTP requests to 53.217.x.x routed through corporate proxy "apac" → timeout
+Solution: proxies={"http": None, "https": None} on every requests call
+Also: unset proxy env vars in setup scripts, --proxy "" for pip
+
+CHALLENGE 2: False Disconnect During RDP Handshake
+Problem: CONSOLE_DISCONNECT fires multiple times during RDP handshake → false checkout
+Solution: Delayed verification — wait 5s, then check WTSEnumerateSessions state
+
+CHALLENGE 3: Double Login Gate
+Problem: Multiple WTS events fire within milliseconds → multiple login gates
+Solution: 30s debounce + lock file PID check + WMIC process verification
+
+CHALLENGE 4: Monitor Crash With No Recovery
+Problem: Session monitor dies, nobody restarts it, bench stuck on dashboard
+Solution: Three-layer safety: Python watchdog (50 retries), scheduled task (5min),
+          startup cleanup (boot)
+
+CHALLENGE 5: Win+L Physical Bench Issue
+Problem: SESSION_LOCK fires checkout, but spurious REMOTE_CONNECT re-occupies immediately
+Solution: 15-second cooldown after lock — all resume events ignored
+          Also: manual "Release" button on dashboard for physical users
+
+CHALLENGE 6: Login Gate Freezing ("Not Responding")
+Problem: HTTP request blocks Tkinter main thread → Windows shows "Not Responding"
+Solution: Background thread for HTTP call + root.update_idletasks() + _submitting guard
+
+CHALLENGE 7: Stale Lock File After Restart
+Problem: .session_monitor.lock survives reboot → PID recycled → blocks new monitor
+Solution: startup_cleanup.py (SYSTEM, onstart) deletes lock files before anything starts
+
+CHALLENGE 8: Dashboard Stale After Long Background
+Problem: Browser throttles setInterval in background tabs → data frozen
+Solution: Page Visibility API — instant fetch on tab focus, full reload after 10min
+
+CHALLENGE 9: Same User Shown After Different Person Takes Over
+Problem: renderDashboard only re-renders on status change (available↔occupied)
+Solution: buildStatusMap includes short_id + purpose — detects user changes too
+
+CHALLENGE 10: Bench Stuck on Dashboard After Restart
+Problem: PC restarts → no checkout sent → dashboard shows occupied forever
+Solution: startup_cleanup.py runs as SYSTEM on boot → sends checkout before login
+
+
+=============================================================================================================
+13. SECURITY MEASURES
+=============================================================================================================
+
+- Input validation: Pydantic models with regex patterns, length limits
+- XSS prevention: HTML tags stripped from purpose field, escapeHtml() in frontend
+- CORS: Middleware restricts to server hostname only
+- Error messages: Generic "Restart failed" (no system info leaked)
+- Credentials: Separate JSON file, not in codebase
+- Short ID validation: Alphanumeric + underscore only (^[A-Za-z0-9_]+$)
+- Toast/notification content: All user data escaped before rendering
+
+KNOWN GAPS (internal tool trade-offs):
+- No authentication (internal network only)
+- No HTTPS (corporate network)
+- Plaintext credentials in JSON (should be env vars)
+- No rate limiting
+
+
+=============================================================================================================
+14. DEPLOYMENT DETAILS
+=============================================================================================================
+
+SERVER SETUP:
+    cd ~/Desktop/Bench_Usage_Automation/server
+    source venv/bin/activate
+    cd app
+    nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 8000 > server.log 2>&1 &
+
+CLIENT SETUP (per bench):
+    1. Copy client_windows/ folder
+    2. Run setup_client.bat (creates venv, installs deps, creates tasks)
+    3. Or manual: create 3 scheduled tasks + start monitor
+
+SCHEDULED TASKS (per bench):
+    BenchStartupCleanup — /sc onstart /ru SYSTEM → startup_cleanup.py
+    BenchSessionMonitor — /sc onlogon → session_monitor.py
+    BenchSessionMonitorWatchdog — /sc minute /mo 5 → session_monitor.py
+
+FILES PER BENCH:
+    session_monitor.py — background session detection
+    login_gate.py — fullscreen check-in form
+    startup_cleanup.py — boot-time cleanup
+    config.ini — bench_id + server URL
+    MBRDI.png — logo for login gate
+    venv/ — Python virtual environment
+
+
+=============================================================================================================
+15. IMPACT & METRICS
+=============================================================================================================
+
+- Eliminated manual Teams tracking (15+ daily messages → zero)
+- 100% visibility into bench usage (real-time, 5-second refresh)
+- Remote restart saved overnight/weekend test runs from being lost
+- Usage analytics enable data-driven resource planning
+- 5-day development cycle using AI-assisted coding
+- Presented to Extended Leadership as AI innovation initiative
+- Other teams requesting same setup for their benches
+- Scalable: plug-and-play for any team with shared infrastructure
+
+
+=============================================================================================================
+16. FUTURE ROADMAP
+=============================================================================================================
+
+- Remote ECU Flashing from dashboard (Dr. Burn integration — partially implemented)
+- Hardware Chatbot (AI-powered bench diagnostics)
+- Auto Test Execution scheduling
+- Short ID validation via RDP client hostname
+- HTTPS + Authentication
+- WebSockets for true real-time
+- Server-side timeout (auto-release after X hours of inactivity)
+- Folder size monitoring per bench
+
+
+=============================================================================================================
+17. INTERVIEW QUESTIONS & ANSWERS
+=============================================================================================================
+
+Q: Tell me about your project.
+A: "I built a real-time bench tracking system for our test lab at Mercedes-Benz. We have 5
+shared open-loop test benches used by 15+ engineers. The problem was nobody knew who was
+using which bench — we relied on Teams messages which were unreliable. I developed a
+full-stack solution with auto check-in on RDP connect, auto release on disconnect, a live
+dashboard, remote restart capability, and usage analytics. Developed in 5 days using
+AI-assisted coding."
+
+Q: What's the tech stack?
+A: "Backend: Python FastAPI with SQLite. Frontend: HTML/CSS/JS with Chart.js. Client-side:
+Python with pywin32 for WTS events and Tkinter for the login gate GUI. Infrastructure:
+Linux server, Windows bench PCs, Windows Task Scheduler for auto-start."
+
+Q: How does auto check-in/check-out work?
+A: "A session monitor runs on each bench using Windows Terminal Services notifications —
+specifically WTSRegisterSessionNotification with NOTIFY_FOR_ALL_SESSIONS. When RDP connects
+(REMOTE_CONNECT event), it launches a fullscreen login gate. When it disconnects
+(REMOTE_DISCONNECT), it sends a POST to the server's checkout endpoint. Dashboard polls
+every 5 seconds and reflects the change."
+
+Q: What was your hardest bug?
+A: "The Win+L on physical bench issue. SESSION_LOCK fires checkout correctly, but Windows
+immediately fires spurious REMOTE_CONNECT events — re-occupying the bench. I tried multiple
+approaches. The final solution was a 15-second cooldown after lock events during which all
+resume events are ignored. For physical users, I added a manual Release button on the
+dashboard."
+
+Q: Why FastAPI over Flask?
+A: "FastAPI gives automatic request validation via Pydantic, built-in Swagger docs, async
+support for concurrent polling, and it's lightweight. For an internal tool with 5-10
+concurrent users, it's ideal."
+
+Q: Why SQLite instead of PostgreSQL?
+A: "Scale is small — 5 benches, 15 users, ~50 records/day. SQLite is zero-config, single
+file, no server process. WAL mode handles concurrent reads from polling. If we scale to 50+
+benches, migration to PostgreSQL would be straightforward."
+
+Q: Why polling instead of WebSockets?
+A: "Simplicity. 5-second polling is sufficient for our use case. WebSockets add complexity
+(connection management, reconnection logic). Page Visibility API handles background tab
+throttling. If we needed real-time for 100+ users, I'd switch to WebSockets."
+
+Q: How do you handle concurrent access to SQLite?
+A: "WAL mode (Write-Ahead Logging) allows concurrent reads while one writer. Write
+operations are short (single UPDATE/INSERT). For our scale, no contention issues."
+
+Q: Explain the GIL. Does it affect your project?
+A: "Global Interpreter Lock means only one thread runs Python bytecode at a time. In our
+session monitor, WTS events come from Windows message pump (C-level, not blocked by GIL)
+and network calls in threads release GIL during I/O. So no impact."
+
+Q: What is threading and why did you use it?
+A: "Threading allows concurrent execution. I use it in the login gate so the HTTP request
+runs in a background thread — UI stays responsive. Also in session monitor: safety-net
+poller runs in a daemon thread, and delayed disconnect checks run in threads."
+
+Q: How would you scale to 50 benches?
+A: "Move to PostgreSQL, add JWT authentication, deploy behind Nginx with HTTPS, use
+WebSockets for real-time, add multi-site support (site_id field), containerize with Docker."
+
+Q: What is CORS?
+A: "Cross-Origin Resource Sharing — browser security blocking requests to different domains.
+We added CORS middleware to restrict which origins can call our API."
+
+Q: How does the remote restart work?
+A: "Windows: net rpc shutdown via SMB protocol. Linux: SSH with sshpass for password auth,
+then sudo reboot. Credentials stored in server config. Safety check: can't restart if
+bench is occupied."
+
+Q: How do you ensure reliability?
+A: "Multiple layers: Python watchdog (auto-restart on crash), scheduled task watchdog
+(5-min check), startup cleanup (boot recovery), lock file duplicate prevention, debounce
+timers, safety-net poller as backup for missed WTS events."
+
+Q: What about security?
+A: "Pydantic validation strips HTML, rejects invalid input. CORS restricts origins. Error
+messages are generic (no system info leaked). Credentials in separate config. It's
+internal-only — no internet exposure. For production: add JWT auth + HTTPS."
+
+Q: How did AI help?
+A: "Architecture design, debugging Windows session event quirks, resolving corporate proxy
+issues, building the dashboard UI, handling race conditions, and rapid iteration. The
+entire system was built in 5 days because AI accelerated the debugging cycle significantly."
+
+Q: What would you do differently?
+A: "WebSockets from the start, authentication from day one, use NSSM (service wrapper)
+instead of Task Scheduler for the monitor — more reliable crash recovery. Also separate
+user accounts per person instead of pool accounts."
+
+Q: What is REST API?
+A: "Representational State Transfer — uses HTTP methods on resource URLs. POST /api/checkin
+creates a session, POST /api/checkout ends it, GET /api/benches reads status. Stateless —
+each request is self-contained."
+
+Q: What is JSON?
+A: "JavaScript Object Notation — lightweight data interchange format. Our API communicates
+in JSON. Config files are JSON. Frontend parses responses with res.json()."
+
+Q: What is a decorator in Python?
+A: "A function that wraps another to add behavior. FastAPI uses them for routing:
+@router.post('/api/checkin'). Pydantic uses @field_validator for custom validation."
+
+Q: What is a context manager?
+A: "Handles setup/teardown with 'with' statement. Example: with open('file') as f.
+Ensures cleanup happens even on exception."
+
+Q: Difference between python.exe and pythonw.exe?
+A: "python.exe shows console window. pythonw.exe runs silently (no window). We use
+pythonw.exe for background session monitor, python.exe for debugging."
+
+Q: What is Page Visibility API?
+A: "Browser API detecting tab visibility. document.addEventListener('visibilitychange').
+We use it to instantly refresh data when user switches back to dashboard tab."
+
+Q: What is Chart.js?
+A: "JavaScript charting library. Give it canvas + data + config → renders interactive
+charts. We use bar, pie, and horizontal bar charts for usage statistics."
+
+
+=============================================================================================================
+18. KEY TECHNICAL DEFINITIONS
+=============================================================================================================
+
+RDP (Remote Desktop Protocol):
+    Microsoft protocol for remote PC access. User on laptop connects to bench PC's
+    desktop over network. Our system detects these connections/disconnections.
+
+WTS (Windows Terminal Services):
+    Windows API for session event monitoring. Sends notifications when users log in,
+    disconnect, lock screen, etc.
+
+FastAPI:
+    Modern Python web framework. Built on Starlette (async HTTP) + Pydantic (validation).
+    Auto-generates OpenAPI docs. Extremely fast for Python.
+
+Uvicorn:
+    ASGI (Asynchronous Server Gateway Interface) server that runs FastAPI.
+    Command: uvicorn main:app --host 0.0.0.0 --port 8000
+
+SQLite:
+    Self-contained, serverless SQL database. Single file (bench_data.db).
+    Perfect for small apps — no separate server process needed.
+
+WAL Mode (Write-Ahead Logging):
+    SQLite journal mode allowing concurrent reads during writes. Readers don't
+    block writers and vice versa.
+
+Pydantic:
+    Python library for data validation using type annotations. FastAPI uses it
+    to validate all incoming request bodies automatically.
+
+Jinja2:
+    Python templating engine. Renders HTML with dynamic data ({{ variable }}).
+    FastAPI serves HTML pages through Jinja2 templates.
+
+CORS (Cross-Origin Resource Sharing):
+    Browser security mechanism. Prevents JavaScript on one domain from calling
+    APIs on another domain. Middleware configures allowed origins.
+
+Tkinter:
+    Python's built-in GUI library. Creates desktop windows, buttons, inputs.
+    Used for our fullscreen login gate.
+
+pywin32:
+    Python bindings for Windows APIs. Gives access to WTS functions,
+    window creation, process management.
+
+Chart.js:
+    JavaScript library for rendering charts on HTML canvas elements.
+    Supports bar, line, pie, doughnut, and more.
+
+WebSocket:
+    Full-duplex communication protocol. Server can push updates to client
+    without polling. Better for real-time but more complex.
+
+Polling:
+    Client repeatedly requests data at intervals (every 5 seconds).
+    Simpler than WebSockets but slightly delayed.
+
+Page Visibility API:
+    Browser API: document.hidden + visibilitychange event.
+    Detects when tab is active vs background.
+
+ASGI:
+    Asynchronous Server Gateway Interface — async version of WSGI.
+    Allows handling multiple requests concurrently.
+
+REST:
+    Representational State Transfer — architectural style using HTTP methods
+    (GET, POST, PUT, DELETE) on resource URLs.
+
+GIL (Global Interpreter Lock):
+    CPython mechanism allowing only one thread to execute Python bytecode
+    at a time. Released during I/O operations.
+
+Daemon Thread:
+    Thread that automatically dies when main program exits.
+    Used for safety-net poller and HTTP calls.
+
+Virtual Environment (venv):
+    Isolated Python environment with its own packages.
+    Prevents conflicts between projects.
+
+
+=============================================================================================================
+19. WORKFLOW — COMPLETE EVENT TIMELINE
+=============================================================================================================
+
+NORMAL USAGE (RDP):
+    0:00 — User opens Remote Desktop, connects to bench
+    0:01 — Windows fires WTS_REMOTE_CONNECT
+    0:01 — Session monitor: debounce OK, gate not running → launch login_gate.py
+    0:02 — Login gate appears (fullscreen, blocks desktop)
+    0:05 — User enters "ADPRIYA" + "Software Debug", clicks CHECK IN
+    0:05 — Background thread: POST /api/checkin → 200 OK
+    0:06 — Login gate closes, user has desktop
+    0:10 — Dashboard poll: card turns red "ADPRIYA — Software Debug"
+
+    ... user works for 2 hours ...
+
+    2:00:00 — User closes RDP window
+    2:00:00 — Windows fires WTS_REMOTE_DISCONNECT
+    2:00:00 — Session monitor: send_checkout() → POST /api/checkout
+    2:00:01 — Server: INSERT usage_history + UPDATE bench_status = available
+    2:00:05 — Dashboard poll: card turns green "Available"
+    2:00:05 — Browser notification: "ADPRIYA checked out — Maurya"
+
+RESTART SCENARIO:
+    0:00 — Bench restarts (all processes die)
+    0:00 — Dashboard still shows "Occupied" (no checkout was sent)
+    0:30 — Windows booted, startup_cleanup.py runs (SYSTEM)
+    0:30 — Deletes .session_monitor.lock + .login_gate.lock
+    0:30 — POST /api/checkout → Dashboard: "Available" ✓
+    1:00 — User logs in via RDP
+    1:00 — BenchSessionMonitor task fires (onlogon)
+    1:00 — session_monitor.py starts
+    1:05 — Login gate appears → user checks in → normal flow
+
+
+=============================================================================================================
+20. TIPS FOR INTERVIEW
+=============================================================================================================
+
+1. Start with PROBLEM before solution — shows business thinking
+2. Mention NUMBERS — 5 benches, 15+ users, 5 days, 5-second refresh
+3. Highlight CHALLENGES — shows depth and problem-solving ability
+4. Explain TRADE-OFFS — why SQLite not Postgres, why polling not WebSocket
+5. Mention AI-ASSISTED development — shows modern tool adoption
+6. End with SCALABILITY — "any team with shared infrastructure can deploy it"
+7. Be specific about EDGE CASES — proxy, WTS storms, stale locks
+8. Show RELIABILITY thinking — watchdog, safety-net, cleanup
+9. Know your ARCHITECTURE — 3 layers, data flow, sequence of events
+10. Prepare for "what would you improve" — shows self-awareness

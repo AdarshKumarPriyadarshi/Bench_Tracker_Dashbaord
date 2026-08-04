@@ -2,7 +2,6 @@ __pycache__/
 *.pyc
 venv/
 .env
-*.db
 *.log
 *.lock
 .claude/
@@ -10,6 +9,7 @@ venv/
 # Sensitive files
 server/config/credentials.json
 server/config/jira_config.json
+jira/backend/.env
 
 # IDE
 .vscode/
@@ -19,5 +19,5 @@ server/config/jira_config.json
 Thumbs.db
 .DS_Store
 
-# Node modules (jira frontend)
+# Node modules
 node_modules/
